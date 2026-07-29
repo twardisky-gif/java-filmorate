@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +25,7 @@ public class UserController {
 
     @GetMapping
     public Collection<User> getAll() {
-        return users.values();
+        return new ArrayList<>(users.values());
     }
 
     @PostMapping
@@ -39,33 +40,38 @@ public class UserController {
 
     @PutMapping
     public User update(@RequestBody User user) {
-        if (!users.containsKey(user.getId())) {
-            throw new ValidationException("Пользователь с id=" + user.getId() + " не найден");
+        int id = user.getId();
+        if (!users.containsKey(id)) {
+            throw new ValidationException("Пользователь с id=" + id + " не найден");
         }
         validate(user);
         applyNameIfEmpty(user);
-        users.put(user.getId(), user);
+        users.put(id, user);
         log.info("Обновлен пользователь: {}", user.getLogin());
         return user;
     }
 
     private void validate(User user) {
-        if (user.getEmail() == null || user.getEmail().isBlank() || !user.getEmail().contains("@")) {
-            log.warn("Некорректный email: {}", user.getEmail());
+        String email = user.getEmail();
+        if (email == null || email.isBlank() || !email.contains("@")) {
+            log.warn("Некорректный email: {}", email);
             throw new ValidationException("Электронная почта не может быть пустой и должна содержать @");
         }
-        if (user.getLogin() == null || user.getLogin().isBlank() || user.getLogin().contains(" ")) {
-            log.warn("Некорректный логин: {}", user.getLogin());
+        String login = user.getLogin();
+        if (login == null || login.isBlank() || login.contains(" ")) {
+            log.warn("Некорректный логин: {}", login);
             throw new ValidationException("Логин не может быть пустым и содержать пробелы");
         }
-        if (user.getBirthday() != null && user.getBirthday().isAfter(LocalDate.now())) {
-            log.warn("Дата рождения в будущем: {}", user.getBirthday());
+        LocalDate birthday = user.getBirthday();
+        if (birthday != null && birthday.isAfter(LocalDate.now())) {
+            log.warn("Дата рождения в будущем: {}", birthday);
             throw new ValidationException("Дата рождения не может быть в будущем");
         }
     }
 
     private void applyNameIfEmpty(User user) {
-        if (user.getName() == null || user.getName().isBlank()) {
+        String name = user.getName();
+        if (name == null || name.isBlank()) {
             user.setName(user.getLogin());
         }
     }
