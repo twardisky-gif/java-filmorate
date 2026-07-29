@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -147,6 +148,6 @@ class UserControllerTest {
         User user = createValidUser();
         user.setId(999);
 
-        assertThrows(ValidationException.class, () -> controller.update(user));
+        assertThrows(NotFoundException.class, () -> controller.update(user));
     }
 }
