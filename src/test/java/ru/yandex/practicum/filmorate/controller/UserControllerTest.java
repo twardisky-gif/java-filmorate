@@ -2,21 +2,27 @@ package ru.yandex.practicum.filmorate.controller;
 
 import java.time.LocalDate;
 
-import org.junit.jupiter.api.BeforeEach;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.filmorate.model.User;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@WebMvcTest(UserController.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class UserControllerTest {
-    private UserController controller;
 
-    @BeforeEach
-    void setUp() {
-        controller = new UserController();
-    }
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private User createValidUser() {
         User user = new User();
@@ -28,126 +34,153 @@ class UserControllerTest {
     }
 
     @Test
-    void shouldCreateValidUser() {
+    void shouldCreateValidUser() throws Exception {
         User user = createValidUser();
-        User created = controller.create(user);
 
-        assertEquals(1, created.getId());
-        assertEquals("testlogin", created.getLogin());
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.login").value("testlogin"));
     }
 
     @Test
-    void shouldFailWhenEmailIsEmpty() {
+    void shouldFailWhenEmailIsEmpty() throws Exception {
         User user = createValidUser();
         user.setEmail("");
 
-        assertThrows(ValidationException.class, () -> controller.create(user));
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void shouldFailWhenEmailIsNull() {
-        User user = createValidUser();
-        user.setEmail(null);
-
-        assertThrows(ValidationException.class, () -> controller.create(user));
-    }
-
-    @Test
-    void shouldFailWhenEmailHasNoAt() {
+    void shouldFailWhenEmailHasNoAt() throws Exception {
         User user = createValidUser();
         user.setEmail("invalid-email");
 
-        assertThrows(ValidationException.class, () -> controller.create(user));
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void shouldFailWhenLoginIsEmpty() {
+    void shouldFailWhenLoginIsEmpty() throws Exception {
         User user = createValidUser();
         user.setLogin("");
 
-        assertThrows(ValidationException.class, () -> controller.create(user));
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void shouldFailWhenLoginIsNull() {
-        User user = createValidUser();
-        user.setLogin(null);
-
-        assertThrows(ValidationException.class, () -> controller.create(user));
-    }
-
-    @Test
-    void shouldFailWhenLoginContainsSpaces() {
+    void shouldFailWhenLoginContainsSpaces() throws Exception {
         User user = createValidUser();
         user.setLogin("login with spaces");
 
-        assertThrows(ValidationException.class, () -> controller.create(user));
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void shouldUseLoginAsNameWhenNameIsEmpty() {
+    void shouldUseLoginAsNameWhenNameIsEmpty() throws Exception {
         User user = createValidUser();
         user.setName("");
 
-        User created = controller.create(user);
-        assertEquals("testlogin", created.getName());
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("testlogin"));
     }
 
     @Test
-    void shouldUseLoginAsNameWhenNameIsNull() {
+    void shouldUseLoginAsNameWhenNameIsNull() throws Exception {
         User user = createValidUser();
         user.setName(null);
 
-        User created = controller.create(user);
-        assertEquals("testlogin", created.getName());
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("testlogin"));
     }
 
     @Test
-    void shouldFailWhenBirthdayIsInFuture() {
+    void shouldFailWhenBirthdayIsInFuture() throws Exception {
         User user = createValidUser();
         user.setBirthday(LocalDate.now().plusDays(1));
 
-        assertThrows(ValidationException.class, () -> controller.create(user));
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void shouldAcceptBirthdayToday() {
+    void shouldAcceptBirthdayToday() throws Exception {
         User user = createValidUser();
         user.setBirthday(LocalDate.now());
 
-        User created = controller.create(user);
-        assertNotNull(created);
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isOk());
     }
 
     @Test
-    void shouldGetAllUsers() {
+    void shouldGetAllUsers() throws Exception {
         User user1 = createValidUser();
         User user2 = createValidUser();
         user2.setLogin("another");
         user2.setEmail("another@test.com");
 
-        controller.create(user1);
-        controller.create(user2);
+        mockMvc.perform(post("/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(user1)));
+        mockMvc.perform(post("/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(user2)));
 
-        assertEquals(2, controller.getAll().size());
+        mockMvc.perform(get("/users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2));
     }
 
     @Test
-    void shouldUpdateUser() {
+    void shouldUpdateUser() throws Exception {
         User user = createValidUser();
-        User created = controller.create(user);
+
+        String response = mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andReturn().getResponse().getContentAsString();
+        User created = objectMapper.readValue(response, User.class);
 
         created.setName("Updated Name");
-        User updated = controller.update(created);
 
-        assertEquals("Updated Name", updated.getName());
+        mockMvc.perform(put("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(created)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Updated Name"));
     }
 
     @Test
-    void shouldFailUpdateWithUnknownId() {
+    void shouldFailUpdateWithUnknownId() throws Exception {
         User user = createValidUser();
         user.setId(999);
 
-        assertThrows(NotFoundException.class, () -> controller.update(user));
+        mockMvc.perform(put("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isNotFound());
     }
 }
