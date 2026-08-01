@@ -1,5 +1,9 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,10 +23,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class FilmControllerTest {
 
-    private static final String VALID_FILM = """
-            {"name":"Тестовый фильм","description":"Описание","releaseDate":"2000-01-01",
-             "duration":120,"mpa":{"id":3},"genres":[{"id":1},{"id":2}]}
-            """;
+    private static final int MPA_G = 1;
+    private static final int MPA_PG13 = 3;
+    private static final int GENRE_COMEDY = 1;
+    private static final int GENRE_DRAMA = 2;
+    private static final int UNKNOWN_ID = 999999;
+    private static final int MAX_DESCRIPTION_LENGTH = 200;
 
     @Autowired
     private MockMvc mockMvc;
@@ -30,21 +36,36 @@ class FilmControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    private Map<String, Object> validFilm() {
+        Map<String, Object> film = new LinkedHashMap<>();
+        film.put("name", "Тестовый фильм");
+        film.put("description", "Описание");
+        film.put("releaseDate", "2000-01-01");
+        film.put("duration", 120);
+        film.put("mpa", Map.of("id", MPA_PG13));
+        film.put("genres", List.of(Map.of("id", GENRE_COMEDY), Map.of("id", GENRE_DRAMA)));
+        return film;
+    }
+
+    private String asJson(Object body) throws Exception {
+        return objectMapper.writeValueAsString(body);
+    }
+
     private long createFilm() throws Exception {
-        String body = mockMvc.perform(post("/films")
+        String response = mockMvc.perform(post("/films")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(VALID_FILM))
+                        .content(asJson(validFilm())))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
-        return objectMapper.readTree(body).get("id").asLong();
+        return objectMapper.readTree(response).get("id").asLong();
     }
 
-    private void expectStatus(String body, int expectedStatus) throws Exception {
+    private void expectCreateStatus(Map<String, Object> film, int expectedStatus) throws Exception {
         mockMvc.perform(post("/films")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
+                        .content(asJson(film)))
                 .andExpect(status().is(expectedStatus));
     }
 
@@ -52,80 +73,83 @@ class FilmControllerTest {
     void shouldCreateValidFilm() throws Exception {
         mockMvc.perform(post("/films")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(VALID_FILM))
+                        .content(asJson(validFilm())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Тестовый фильм"))
-                .andExpect(jsonPath("$.mpa.id").value(3))
+                .andExpect(jsonPath("$.mpa.id").value(MPA_PG13))
                 .andExpect(jsonPath("$.mpa.name").value("PG-13"))
                 .andExpect(jsonPath("$.genres.length()").value(2))
-                .andExpect(jsonPath("$.genres[0].id").value(1))
+                .andExpect(jsonPath("$.genres[0].id").value(GENRE_COMEDY))
                 .andExpect(jsonPath("$.genres[0].name").value("Комедия"));
     }
 
     @Test
     void shouldFailWhenNameIsEmpty() throws Exception {
-        expectStatus("""
-                {"name":"","description":"Описание","releaseDate":"2000-01-01",
-                 "duration":120,"mpa":{"id":1}}
-                """, 400);
+        Map<String, Object> film = validFilm();
+        film.put("name", "");
+
+        expectCreateStatus(film, 400);
     }
 
     @Test
     void shouldFailWhenDescriptionIsTooLong() throws Exception {
-        expectStatus("""
-                {"name":"Фильм","description":"%s","releaseDate":"2000-01-01",
-                 "duration":120,"mpa":{"id":1}}
-                """.formatted("a".repeat(201)), 400);
+        Map<String, Object> film = validFilm();
+        film.put("description", "a".repeat(MAX_DESCRIPTION_LENGTH + 1));
+
+        expectCreateStatus(film, 400);
     }
 
     @Test
     void shouldFailWhenReleaseDateIsTooEarly() throws Exception {
-        expectStatus("""
-                {"name":"Фильм","description":"Описание","releaseDate":"1895-12-27",
-                 "duration":120,"mpa":{"id":1}}
-                """, 400);
+        Map<String, Object> film = validFilm();
+        film.put("releaseDate", "1895-12-27");
+
+        expectCreateStatus(film, 400);
     }
 
     @Test
     void shouldFailWhenDurationIsNegative() throws Exception {
-        expectStatus("""
-                {"name":"Фильм","description":"Описание","releaseDate":"2000-01-01",
-                 "duration":-1,"mpa":{"id":1}}
-                """, 400);
+        Map<String, Object> film = validFilm();
+        film.put("duration", -1);
+
+        expectCreateStatus(film, 400);
     }
 
     @Test
     void shouldFailWhenMpaIsMissing() throws Exception {
-        expectStatus("""
-                {"name":"Фильм","description":"Описание",
-                 "releaseDate":"2000-01-01","duration":120}
-                """, 400);
+        Map<String, Object> film = validFilm();
+        film.remove("mpa");
+
+        expectCreateStatus(film, 400);
     }
 
     @Test
     void shouldReturn404ForUnknownMpa() throws Exception {
-        expectStatus("""
-                {"name":"Фильм","description":"Описание","releaseDate":"2000-01-01",
-                 "duration":120,"mpa":{"id":9999}}
-                """, 404);
+        Map<String, Object> film = validFilm();
+        film.put("mpa", Map.of("id", UNKNOWN_ID));
+
+        expectCreateStatus(film, 404);
     }
 
     @Test
     void shouldReturn404ForUnknownGenre() throws Exception {
-        expectStatus("""
-                {"name":"Фильм","description":"Описание","releaseDate":"2000-01-01",
-                 "duration":120,"mpa":{"id":1},"genres":[{"id":9999}]}
-                """, 404);
+        Map<String, Object> film = validFilm();
+        film.put("genres", List.of(Map.of("id", UNKNOWN_ID)));
+
+        expectCreateStatus(film, 404);
     }
 
     @Test
     void shouldNotDuplicateGenres() throws Exception {
+        Map<String, Object> film = validFilm();
+        film.put("genres", List.of(
+                Map.of("id", GENRE_COMEDY),
+                Map.of("id", GENRE_DRAMA),
+                Map.of("id", GENRE_COMEDY)));
+
         mockMvc.perform(post("/films")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name":"Без дублей","description":"Описание","releaseDate":"2000-01-01",
-                                 "duration":120,"mpa":{"id":3},"genres":[{"id":1},{"id":2},{"id":1}]}
-                                """))
+                        .content(asJson(film)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.genres.length()").value(2));
     }
@@ -142,34 +166,34 @@ class FilmControllerTest {
 
     @Test
     void shouldReturn404ForUnknownFilm() throws Exception {
-        mockMvc.perform(get("/films/999999"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void shouldReturn404WhenUpdatingUnknownFilm() throws Exception {
-        mockMvc.perform(put("/films")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"id":999999,"name":"Фильм","description":"Описание",
-                                 "releaseDate":"2000-01-01","duration":120,"mpa":{"id":1}}
-                                """))
+        mockMvc.perform(get("/films/" + UNKNOWN_ID))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void shouldUpdateFilm() throws Exception {
-        long id = createFilm();
+        Map<String, Object> film = validFilm();
+        film.put("id", createFilm());
+        film.put("name", "Обновленный");
+        film.put("mpa", Map.of("id", MPA_G));
 
         mockMvc.perform(put("/films")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"id":%d,"name":"Обновленный","description":"Новое описание",
-                                 "releaseDate":"1989-04-17","duration":190,"mpa":{"id":1}}
-                                """.formatted(id)))
+                        .content(asJson(film)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Обновленный"))
                 .andExpect(jsonPath("$.mpa.name").value("G"));
+    }
+
+    @Test
+    void shouldReturn404WhenUpdatingUnknownFilm() throws Exception {
+        Map<String, Object> film = validFilm();
+        film.put("id", UNKNOWN_ID);
+
+        mockMvc.perform(put("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJson(film)))
+                .andExpect(status().isNotFound());
     }
 
     @Test

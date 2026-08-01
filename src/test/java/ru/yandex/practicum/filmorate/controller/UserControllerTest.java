@@ -1,5 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class UserControllerTest {
 
     private static final AtomicInteger COUNTER = new AtomicInteger();
+    private static final int UNKNOWN_ID = 999999;
 
     @Autowired
     private MockMvc mockMvc;
@@ -29,31 +32,38 @@ class UserControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private String userJson(String login) {
-        return """
-                {"email":"%s@mail.ru","login":"%s","name":"Имя","birthday":"1990-05-15"}
-                """.formatted(login, login);
-    }
-
     private String uniqueLogin() {
         return "user" + COUNTER.incrementAndGet() + System.nanoTime();
     }
 
+    private Map<String, Object> userWithLogin(String login) {
+        Map<String, Object> user = new LinkedHashMap<>();
+        user.put("email", login + "@mail.ru");
+        user.put("login", login);
+        user.put("name", "Имя");
+        user.put("birthday", "1990-05-15");
+        return user;
+    }
+
+    private String asJson(Object body) throws Exception {
+        return objectMapper.writeValueAsString(body);
+    }
+
     private long createUser() throws Exception {
-        String body = mockMvc.perform(post("/users")
+        String response = mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(userJson(uniqueLogin())))
+                        .content(asJson(userWithLogin(uniqueLogin()))))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
-        return objectMapper.readTree(body).get("id").asLong();
+        return objectMapper.readTree(response).get("id").asLong();
     }
 
-    private void expectBadRequest(String body) throws Exception {
+    private void expectBadRequest(Map<String, Object> user) throws Exception {
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
+                        .content(asJson(user)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -63,7 +73,7 @@ class UserControllerTest {
 
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(userJson(login)))
+                        .content(asJson(userWithLogin(login))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").isNumber())
                 .andExpect(jsonPath("$.login").value(login));
@@ -71,34 +81,37 @@ class UserControllerTest {
 
     @Test
     void shouldFailWhenEmailIsEmpty() throws Exception {
-        expectBadRequest("""
-                {"email":"","login":"login","name":"Имя","birthday":"1990-05-15"}
-                """);
+        Map<String, Object> user = userWithLogin(uniqueLogin());
+        user.put("email", "");
+
+        expectBadRequest(user);
     }
 
     @Test
     void shouldFailWhenLoginContainsSpaces() throws Exception {
-        expectBadRequest("""
-                {"email":"spaces@mail.ru","login":"login with spaces","name":"Имя","birthday":"1990-05-15"}
-                """);
+        Map<String, Object> user = userWithLogin(uniqueLogin());
+        user.put("login", "login with spaces");
+
+        expectBadRequest(user);
     }
 
     @Test
     void shouldFailWhenBirthdayIsInFuture() throws Exception {
-        expectBadRequest("""
-                {"email":"future@mail.ru","login":"future","name":"Имя","birthday":"2946-08-20"}
-                """);
+        Map<String, Object> user = userWithLogin(uniqueLogin());
+        user.put("birthday", "2946-08-20");
+
+        expectBadRequest(user);
     }
 
     @Test
     void shouldUseLoginAsNameWhenNameIsEmpty() throws Exception {
         String login = uniqueLogin();
+        Map<String, Object> user = userWithLogin(login);
+        user.put("name", "");
 
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"email":"%s@mail.ru","login":"%s","name":"","birthday":"1990-05-15"}
-                                """.formatted(login, login)))
+                        .content(asJson(user)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value(login));
     }
@@ -114,7 +127,7 @@ class UserControllerTest {
 
     @Test
     void shouldReturn404ForUnknownUser() throws Exception {
-        mockMvc.perform(get("/users/999999"))
+        mockMvc.perform(get("/users/" + UNKNOWN_ID))
                 .andExpect(status().isNotFound());
     }
 
@@ -153,13 +166,13 @@ class UserControllerTest {
     void shouldReturn404WhenAddingUnknownFriend() throws Exception {
         long userId = createUser();
 
-        mockMvc.perform(put("/users/" + userId + "/friends/999999"))
+        mockMvc.perform(put("/users/" + userId + "/friends/" + UNKNOWN_ID))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void shouldReturn404ForFriendsOfUnknownUser() throws Exception {
-        mockMvc.perform(get("/users/999999/friends"))
+        mockMvc.perform(get("/users/" + UNKNOWN_ID + "/friends"))
                 .andExpect(status().isNotFound());
     }
 
