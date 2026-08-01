@@ -2,7 +2,9 @@ package ru.yandex.practicum.filmorate.storage.film;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -40,5 +42,13 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public Collection<Film> getAll() {
         return new ArrayList<>(films.values());
+    }
+
+    @Override
+    public List<Film> getPopular(int count) {
+        return films.values().stream()
+                .sorted(Comparator.comparingLong(Film::getId))
+                .limit(count)
+                .toList();
     }
 }

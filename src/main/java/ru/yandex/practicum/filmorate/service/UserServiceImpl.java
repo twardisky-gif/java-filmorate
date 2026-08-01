@@ -2,22 +2,25 @@ package ru.yandex.practicum.filmorate.service;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.friendship.FriendshipStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 @Slf4j
 @Service
 public class UserServiceImpl implements UserService {
     private final UserStorage userStorage;
+    private final FriendshipStorage friendshipStorage;
 
-    public UserServiceImpl(UserStorage userStorage) {
+    public UserServiceImpl(@Qualifier("userDbStorage") UserStorage userStorage,
+                           FriendshipStorage friendshipStorage) {
         this.userStorage = userStorage;
+        this.friendshipStorage = friendshipStorage;
     }
 
     @Override
@@ -49,40 +52,31 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void addFriend(long userId, long friendId) {
-        User user = getUserOrThrow(userId);
-        User friend = getUserOrThrow(friendId);
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
-        log.info("Пользователи {} и {} стали друзьями", userId, friendId);
+        getUserOrThrow(userId);
+        getUserOrThrow(friendId);
+        friendshipStorage.add(userId, friendId);
+        log.info("Пользователь {} добавил в друзья пользователя {}", userId, friendId);
     }
 
     @Override
     public void removeFriend(long userId, long friendId) {
-        User user = getUserOrThrow(userId);
-        User friend = getUserOrThrow(friendId);
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
-        log.info("Пользователи {} и {} больше не друзья", userId, friendId);
+        getUserOrThrow(userId);
+        getUserOrThrow(friendId);
+        friendshipStorage.remove(userId, friendId);
+        log.info("Пользователь {} удалил из друзей пользователя {}", userId, friendId);
     }
 
     @Override
     public List<User> getFriends(long userId) {
-        User user = getUserOrThrow(userId);
-        return user.getFriends().stream()
-                .map(this::getUserOrThrow)
-                .collect(Collectors.toList());
+        getUserOrThrow(userId);
+        return friendshipStorage.getFriends(userId);
     }
 
     @Override
     public List<User> getCommonFriends(long userId, long otherId) {
-        User user = getUserOrThrow(userId);
-        User other = getUserOrThrow(otherId);
-        Set<Long> userFriends = user.getFriends();
-        Set<Long> otherFriends = other.getFriends();
-        return userFriends.stream()
-                .filter(otherFriends::contains)
-                .map(this::getUserOrThrow)
-                .collect(Collectors.toList());
+        getUserOrThrow(userId);
+        getUserOrThrow(otherId);
+        return friendshipStorage.getCommonFriends(userId, otherId);
     }
 
     private void applyNameIfEmpty(User user) {

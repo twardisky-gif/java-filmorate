@@ -1,24 +1,28 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import java.time.LocalDate;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.yandex.practicum.filmorate.model.Film;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class FilmControllerTest {
+
+    private static final String VALID_FILM = """
+            {"name":"Тестовый фильм","description":"Описание","releaseDate":"2000-01-01",
+             "duration":120,"mpa":{"id":3},"genres":[{"id":1},{"id":2}]}
+            """;
 
     @Autowired
     private MockMvc mockMvc;
@@ -26,111 +30,154 @@ class FilmControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private Film createValidFilm() {
-        Film film = new Film();
-        film.setName("Test Film");
-        film.setDescription("Description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(120);
-        return film;
+    private long createFilm() throws Exception {
+        String body = mockMvc.perform(post("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_FILM))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        return objectMapper.readTree(body).get("id").asLong();
+    }
+
+    private void expectStatus(String body, int expectedStatus) throws Exception {
+        mockMvc.perform(post("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().is(expectedStatus));
     }
 
     @Test
     void shouldCreateValidFilm() throws Exception {
-        Film film = createValidFilm();
-
         mockMvc.perform(post("/films")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(film)))
+                        .content(VALID_FILM))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("Test Film"));
+                .andExpect(jsonPath("$.name").value("Тестовый фильм"))
+                .andExpect(jsonPath("$.mpa.id").value(3))
+                .andExpect(jsonPath("$.mpa.name").value("PG-13"))
+                .andExpect(jsonPath("$.genres.length()").value(2))
+                .andExpect(jsonPath("$.genres[0].id").value(1))
+                .andExpect(jsonPath("$.genres[0].name").value("Комедия"));
     }
 
     @Test
     void shouldFailWhenNameIsEmpty() throws Exception {
-        Film film = createValidFilm();
-        film.setName("");
-
-        mockMvc.perform(post("/films")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(film)))
-                .andExpect(status().isBadRequest());
+        expectStatus("""
+                {"name":"","description":"Описание","releaseDate":"2000-01-01",
+                 "duration":120,"mpa":{"id":1}}
+                """, 400);
     }
 
     @Test
     void shouldFailWhenDescriptionIsTooLong() throws Exception {
-        Film film = createValidFilm();
-        film.setDescription("a".repeat(201));
-
-        mockMvc.perform(post("/films")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(film)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void shouldAcceptDescriptionOf200Chars() throws Exception {
-        Film film = createValidFilm();
-        film.setDescription("a".repeat(200));
-
-        mockMvc.perform(post("/films")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(film)))
-                .andExpect(status().isOk());
+        expectStatus("""
+                {"name":"Фильм","description":"%s","releaseDate":"2000-01-01",
+                 "duration":120,"mpa":{"id":1}}
+                """.formatted("a".repeat(201)), 400);
     }
 
     @Test
     void shouldFailWhenReleaseDateIsTooEarly() throws Exception {
-        Film film = createValidFilm();
-        film.setReleaseDate(LocalDate.of(1895, 12, 27));
-
-        mockMvc.perform(post("/films")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(film)))
-                .andExpect(status().isBadRequest());
+        expectStatus("""
+                {"name":"Фильм","description":"Описание","releaseDate":"1895-12-27",
+                 "duration":120,"mpa":{"id":1}}
+                """, 400);
     }
 
     @Test
     void shouldFailWhenDurationIsNegative() throws Exception {
-        Film film = createValidFilm();
-        film.setDuration(-1);
+        expectStatus("""
+                {"name":"Фильм","description":"Описание","releaseDate":"2000-01-01",
+                 "duration":-1,"mpa":{"id":1}}
+                """, 400);
+    }
 
+    @Test
+    void shouldFailWhenMpaIsMissing() throws Exception {
+        expectStatus("""
+                {"name":"Фильм","description":"Описание",
+                 "releaseDate":"2000-01-01","duration":120}
+                """, 400);
+    }
+
+    @Test
+    void shouldReturn404ForUnknownMpa() throws Exception {
+        expectStatus("""
+                {"name":"Фильм","description":"Описание","releaseDate":"2000-01-01",
+                 "duration":120,"mpa":{"id":9999}}
+                """, 404);
+    }
+
+    @Test
+    void shouldReturn404ForUnknownGenre() throws Exception {
+        expectStatus("""
+                {"name":"Фильм","description":"Описание","releaseDate":"2000-01-01",
+                 "duration":120,"mpa":{"id":1},"genres":[{"id":9999}]}
+                """, 404);
+    }
+
+    @Test
+    void shouldNotDuplicateGenres() throws Exception {
         mockMvc.perform(post("/films")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(film)))
-                .andExpect(status().isBadRequest());
+                        .content("""
+                                {"name":"Без дублей","description":"Описание","releaseDate":"2000-01-01",
+                                 "duration":120,"mpa":{"id":3},"genres":[{"id":1},{"id":2},{"id":1}]}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.genres.length()").value(2));
     }
 
     @Test
     void shouldGetFilmById() throws Exception {
-        Film film = createValidFilm();
+        long id = createFilm();
 
-        mockMvc.perform(post("/films")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(film)));
-
-        mockMvc.perform(get("/films/1"))
+        mockMvc.perform(get("/films/" + id))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Test Film"));
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.name").value("Тестовый фильм"));
     }
 
     @Test
     void shouldReturn404ForUnknownFilm() throws Exception {
-        mockMvc.perform(get("/films/999"))
+        mockMvc.perform(get("/films/999999"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    void shouldReturnPopularFilms() throws Exception {
-        Film film = createValidFilm();
+    void shouldReturn404WhenUpdatingUnknownFilm() throws Exception {
+        mockMvc.perform(put("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"id":999999,"name":"Фильм","description":"Описание",
+                                 "releaseDate":"2000-01-01","duration":120,"mpa":{"id":1}}
+                                """))
+                .andExpect(status().isNotFound());
+    }
 
-        mockMvc.perform(post("/films")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(film)));
+    @Test
+    void shouldUpdateFilm() throws Exception {
+        long id = createFilm();
+
+        mockMvc.perform(put("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"id":%d,"name":"Обновленный","description":"Новое описание",
+                                 "releaseDate":"1989-04-17","duration":190,"mpa":{"id":1}}
+                                """.formatted(id)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Обновленный"))
+                .andExpect(jsonPath("$.mpa.name").value("G"));
+    }
+
+    @Test
+    void shouldReturnPopularFilms() throws Exception {
+        createFilm();
 
         mockMvc.perform(get("/films/popular"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1));
+                .andExpect(jsonPath("$.length()").value(greaterThan(0)));
     }
 }

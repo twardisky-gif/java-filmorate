@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import ru.yandex.practicum.filmorate.model.Film;
@@ -15,4 +16,6 @@ public interface FilmStorage {
     Optional<Film> getById(long id);
 
     Collection<Film> getAll();
+
+    List<Film> getPopular(int count);
 }
