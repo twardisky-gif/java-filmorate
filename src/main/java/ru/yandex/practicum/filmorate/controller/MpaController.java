@@ -2,33 +2,26 @@ package ru.yandex.practicum.filmorate.controller;
 
 import java.util.List;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.service.MpaService;
+import ru.yandex.practicum.filmorate.dto.MpaDto;
 
-@Slf4j
-@RestController
-@RequestMapping("/mpa")
-public class MpaController {
-    private final MpaService mpaService;
+/**
+ * Операции над справочником возрастных рейтингов MPA.
+ */
+public interface MpaController {
 
-    public MpaController(MpaService mpaService) {
-        this.mpaService = mpaService;
-    }
+    /**
+     * Возвращает все рейтинги.
+     *
+     * @return список рейтингов
+     */
+    List<MpaDto> getAll();
 
-    @GetMapping
-    public List<Mpa> getAll() {
-        log.info("Запрошен список рейтингов");
-        return mpaService.getAll();
-    }
-
-    @GetMapping("/{id}")
-    public Mpa getById(@PathVariable int id) {
-        log.info("Запрошен рейтинг с id={}", id);
-        return mpaService.getById(id);
-    }
+    /**
+     * Возвращает рейтинг по идентификатору.
+     *
+     * @param id идентификатор рейтинга
+     * @return найденный рейтинг
+     * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если рейтинг не найден
+     */
+    MpaDto getById(int id);
 }
