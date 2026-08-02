@@ -2,33 +2,26 @@ package ru.yandex.practicum.filmorate.controller;
 
 import java.util.List;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.service.GenreService;
+import ru.yandex.practicum.filmorate.dto.GenreDto;
 
-@Slf4j
-@RestController
-@RequestMapping("/genres")
-public class GenreController {
-    private final GenreService genreService;
+/**
+ * Операции над справочником жанров фильмов.
+ */
+public interface GenreController {
 
-    public GenreController(GenreService genreService) {
-        this.genreService = genreService;
-    }
+    /**
+     * Возвращает все жанры.
+     *
+     * @return список жанров
+     */
+    List<GenreDto> getAll();
 
-    @GetMapping
-    public List<Genre> getAll() {
-        log.info("Запрошен список жанров");
-        return genreService.getAll();
-    }
-
-    @GetMapping("/{id}")
-    public Genre getById(@PathVariable int id) {
-        log.info("Запрошен жанр с id={}", id);
-        return genreService.getById(id);
-    }
+    /**
+     * Возвращает жанр по идентификатору.
+     *
+     * @param id идентификатор жанра
+     * @return найденный жанр
+     * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если жанр не найден
+     */
+    GenreDto getById(int id);
 }
