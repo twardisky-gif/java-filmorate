@@ -44,6 +44,14 @@ public interface UserController {
     User update(User user);
 
     /**
+     * Удаляет пользователя из друзей.
+     *
+     * @param id идентификатор пользователя
+     * @param friendId идентификатор удаляемого друга
+     */
+    void removeUser(long id);
+
+    /**
      * Добавляет пользователя в друзья. Дружба односторонняя.
      *
      * @param id идентификатор пользователя

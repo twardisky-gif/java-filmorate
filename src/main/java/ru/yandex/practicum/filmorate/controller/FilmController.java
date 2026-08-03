@@ -52,6 +52,12 @@ public interface FilmController {
     void addLike(long id, long userId);
 
     /**
+     * Удаляет фильм.
+     *
+     * @param id идентификатор фильма
+     */
+    void removeFilm(long id);
+    /**
      * Удаляет лайк пользователя у фильма.
      *
      * @param id идентификатор фильма

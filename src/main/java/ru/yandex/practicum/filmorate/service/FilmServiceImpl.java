@@ -64,6 +64,14 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
+    public void removeFilm(Long id) {
+        boolean isRemove = filmStorage.delete(id);
+        if (!isRemove) {
+            throw new NotFoundException("Фильм с id=" + id + " не найден");
+        }
+    }
+
+    @Override
     public Film getById(long id) {
         return getFilmOrThrow(id);
     }

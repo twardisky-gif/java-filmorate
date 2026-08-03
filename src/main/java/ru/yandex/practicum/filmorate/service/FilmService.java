@@ -10,6 +10,8 @@ public interface FilmService {
 
     Film update(Film film);
 
+    void removeFilm(Long id);
+
     Film getById(long id);
 
     Collection<Film> getAll();
