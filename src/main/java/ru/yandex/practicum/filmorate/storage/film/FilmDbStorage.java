@@ -29,9 +29,8 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     private static final String FIND_BY_ID_QUERY = SELECT_FILM_COLUMNS + "WHERE f.film_id = ?";
     private static final String FIND_POPULAR_QUERY = SELECT_FILM_COLUMNS
             + "LEFT JOIN likes l ON l.film_id = f.film_id "
-            + "GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name "
-            + "ORDER BY COUNT(l.user_id) DESC, f.film_id "
-            + "LIMIT ?";
+            + "LEFT JOIN film_genres fg ON fg.film_id = f.film_id "
+            + "WHERE 1=1 ";
     private static final String INSERT_QUERY =
             "INSERT INTO films (name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
     private static final String UPDATE_QUERY =
@@ -101,8 +100,34 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     }
 
     @Override
-    public List<Film> getPopular(int count) {
-        List<Film> films = findMany(FIND_POPULAR_QUERY, count);
+    public List<Film> getPopular(int count, Integer genreId, Integer year) {
+        // Добавляем условия в запрос
+        StringBuilder queryBuilder = new StringBuilder(FIND_POPULAR_QUERY);
+        List<Object> params = new ArrayList<>();
+
+        // Добавляем фильтр по году
+        if (year != null) {
+            queryBuilder.append("AND YEAR(f.release_date) = ? ");
+            params.add(year);
+        }
+
+        // Добавляем фильтр по жанру
+        if (genreId != null) {
+            queryBuilder.append("AND fg.genre_id = ? ");
+            params.add(genreId);
+        }
+
+        // Добавляем группировку и сортировку
+        queryBuilder.append("GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name ")
+                .append("ORDER BY COUNT(l.user_id) DESC, f.film_id ");
+
+        // Добавляем лимит
+        queryBuilder.append("LIMIT ?");
+
+        params.add(count);
+
+        // Выполняем запрос
+        List<Film> films = findMany(queryBuilder.toString(), params.toArray());
         loadGenres(films);
         return films;
     }

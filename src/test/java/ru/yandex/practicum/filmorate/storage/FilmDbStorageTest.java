@@ -153,7 +153,7 @@ class FilmDbStorageTest {
 
         likeStorage.add(film.getId(), user.getId());
 
-        assertThat(filmStorage.getPopular(1))
+        assertThat(filmStorage.getPopular(1, null, null))
                 .extracting(Film::getId)
                 .containsExactly(film.getId());
     }
@@ -167,7 +167,7 @@ class FilmDbStorageTest {
 
         likeStorage.remove(liked.getId(), user.getId());
 
-        assertThat(filmStorage.getPopular(2))
+        assertThat(filmStorage.getPopular(2, null, null))
                 .extracting(Film::getId)
                 .containsExactly(liked.getId(), other.getId());
     }
@@ -182,7 +182,7 @@ class FilmDbStorageTest {
         likeStorage.add(popular.getId(), second.getId());
         likeStorage.add(unpopular.getId(), first.getId());
 
-        List<Film> films = filmStorage.getPopular(2);
+        List<Film> films = filmStorage.getPopular(2, null, null);
 
         assertThat(films)
                 .extracting(Film::getName)
@@ -194,6 +194,37 @@ class FilmDbStorageTest {
         filmStorage.add(newFilm("Первый", null));
         filmStorage.add(newFilm("Второй", null));
 
-        assertThat(filmStorage.getPopular(1)).hasSize(1);
+        assertThat(filmStorage.getPopular(1, null, null)).hasSize(1);
     }
+
+    @Test
+    void shouldLimitPopularFilmsFiltreGenre() {
+        filmStorage.add(newFilm("Первый", new LinkedHashSet<>(List.of(new Genre(1, null)))));
+        filmStorage.add(newFilm("Второй", new LinkedHashSet<>(List.of(new Genre(2, null)))));
+        filmStorage.add(newFilm("Третий", null));
+
+        assertThat(filmStorage.getPopular(10, 1, null)).hasSize(1);
+    }
+
+    @Test
+    void shouldLimitPopularFilmsFiltreYear() {
+        filmStorage.add(newFilm("Первый", null));
+        filmStorage.add(newFilm("Второй", null));
+        filmStorage.add(newFilm("Третий", null));
+
+        assertThat(filmStorage.getPopular(10, null, 1999)).hasSize(3);
+    }
+
+    @Test
+    void shouldLimitPopularFilmsFiltreGenreAndYear() {
+        filmStorage.add(newFilm("Первый", new LinkedHashSet<>(List.of(new Genre(1, null)))));
+        filmStorage.add(newFilm("Второй", new LinkedHashSet<>(List.of(new Genre(2, null)))));
+        filmStorage.add(newFilm("Третий", null));
+
+        assertThat(filmStorage.getPopular(10, 1, 1999)).hasSize(1);
+    }
+
+
 }
+
+
