@@ -56,3 +56,6 @@ CREATE TABLE IF NOT EXISTS friendships (
 
 CREATE INDEX IF NOT EXISTS idx_likes_film ON likes (film_id);
 CREATE INDEX IF NOT EXISTS idx_film_genres_film ON film_genres (film_id);
+
+ALTER TABLE films ALTER COLUMN film_id RESTART WITH 1;
+ALTER TABLE users ALTER COLUMN user_id RESTART WITH 1;
