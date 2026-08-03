@@ -27,10 +27,14 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                     + "JOIN mpa m ON m.mpa_id = f.mpa_id ";
     private static final String FIND_ALL_QUERY = SELECT_FILM_COLUMNS + "ORDER BY f.film_id";
     private static final String FIND_BY_ID_QUERY = SELECT_FILM_COLUMNS + "WHERE f.film_id = ?";
-    private static final String FIND_POPULAR_QUERY = SELECT_FILM_COLUMNS
-            + "LEFT JOIN likes l ON l.film_id = f.film_id "
-            + "LEFT JOIN film_genres fg ON fg.film_id = f.film_id "
-            + "WHERE 1=1 ";
+    private static final String FIND_POPULAR_QUERY =
+            "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name, "
+                    + "COUNT(DISTINCT l.user_id) AS likes_count "
+                    + "FROM films f "
+                    + "JOIN mpa m ON m.mpa_id = f.mpa_id "
+                    + "LEFT JOIN likes l ON l.film_id = f.film_id "
+                    + "LEFT JOIN film_genres fg ON fg.film_id = f.film_id "
+                    + "WHERE 1=1 ";
     private static final String INSERT_QUERY =
             "INSERT INTO films (name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
     private static final String UPDATE_QUERY =
@@ -101,29 +105,28 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
     @Override
     public List<Film> getPopular(int count, Integer genreId, Integer year) {
-        // Добавляем условия в запрос
+        // Строим динамический запрос
         StringBuilder queryBuilder = new StringBuilder(FIND_POPULAR_QUERY);
         List<Object> params = new ArrayList<>();
 
-        // Добавляем фильтр по году
+        // Фильтр по году
         if (year != null) {
             queryBuilder.append("AND YEAR(f.release_date) = ? ");
             params.add(year);
         }
 
-        // Добавляем фильтр по жанру
+        // Фильтр по жанру
         if (genreId != null) {
             queryBuilder.append("AND fg.genre_id = ? ");
             params.add(genreId);
         }
 
-        // Добавляем группировку и сортировку
+        // Группировка и сортировка
         queryBuilder.append("GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name ")
-                .append("ORDER BY COUNT(l.user_id) DESC, f.film_id ");
+                .append("ORDER BY likes_count DESC, f.film_id ");
 
-        // Добавляем лимит
+        // Лимит
         queryBuilder.append("LIMIT ?");
-
         params.add(count);
 
         // Выполняем запрос
