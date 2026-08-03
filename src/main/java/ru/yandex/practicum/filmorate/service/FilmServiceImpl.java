@@ -22,7 +22,6 @@ import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 @Service
 public class FilmServiceImpl implements FilmService {
     private static final LocalDate CINEMA_BIRTHDAY = LocalDate.of(1895, 12, 28);
-    private static final int DEFAULT_POPULAR_COUNT = 10;
 
     private final FilmStorage filmStorage;
     private final LikeStorage likeStorage;
@@ -90,9 +89,15 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
-    public List<Film> getPopular(int count) {
-        int limit = count > 0 ? count : DEFAULT_POPULAR_COUNT;
-        return filmStorage.getPopular(limit);
+    public List<Film> getPopular(int count, Integer genreId, Integer year) {
+        return filmStorage.getPopular(count).stream()
+                // Если genreId == null - не фильтруем по жанрам
+                .filter(film -> genreId == null ||
+                        film.getGenres().stream().anyMatch(g -> g.getId() == genreId))
+                // Если year == null — не фильтруем по году
+                .filter(film -> year == null ||
+                        film.getReleaseDate().getYear() == year)
+                .toList();
     }
 
     private void validateReleaseDate(Film film) {
