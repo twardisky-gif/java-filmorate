@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import java.util.Collection;
 import java.util.List;
 
+import lombok.extern.java.Log;
 import ru.yandex.practicum.filmorate.model.Film;
 
 public interface FilmService {
@@ -19,4 +20,6 @@ public interface FilmService {
     void removeLike(long filmId, long userId);
 
     List<Film> getPopular(int count);
+
+    List<Film> getRecommendations(long userId, int limit);
 }

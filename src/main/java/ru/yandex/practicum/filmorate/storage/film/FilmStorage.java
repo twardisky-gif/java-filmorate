@@ -18,4 +18,5 @@ public interface FilmStorage {
     Collection<Film> getAll();
 
     List<Film> getPopular(int count);
+    List<Film> getRecommendations(long userId, int limit);
 }

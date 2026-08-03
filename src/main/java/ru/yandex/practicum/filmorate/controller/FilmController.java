@@ -3,6 +3,8 @@ package ru.yandex.practicum.filmorate.controller;
 import java.util.Collection;
 import java.util.List;
 
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import ru.yandex.practicum.filmorate.model.Film;
 
 /**
@@ -46,7 +48,7 @@ public interface FilmController {
     /**
      * Ставит лайк фильму от имени пользователя.
      *
-     * @param id идентификатор фильма
+     * @param id     идентификатор фильма
      * @param userId идентификатор пользователя
      */
     void addLike(long id, long userId);
@@ -54,7 +56,7 @@ public interface FilmController {
     /**
      * Удаляет лайк пользователя у фильма.
      *
-     * @param id идентификатор фильма
+     * @param id     идентификатор фильма
      * @param userId идентификатор пользователя
      */
     void removeLike(long id, long userId);
@@ -66,4 +68,6 @@ public interface FilmController {
      * @return список фильмов по убыванию популярности
      */
     List<Film> getPopular(int count);
+
+    List<Film> getRecommendations(long userId, int count);
 }

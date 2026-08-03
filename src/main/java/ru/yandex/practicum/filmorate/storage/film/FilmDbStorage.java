@@ -49,6 +49,30 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                     + "JOIN genres g ON g.genre_id = fg.genre_id "
                     + "WHERE fg.film_id IN (%s) "
                     + "ORDER BY fg.film_id, g.genre_id";
+    private static final String FIND_RECOMMENDATIONS_QUERY =
+            "WITH similar_users AS (" +
+                    "    SELECT l2.user_id, COUNT(*) as common_likes " +
+                    "    FROM likes l1 " +
+                    "    JOIN likes l2 ON l1.film_id = l2.film_id " +
+                    "    WHERE l1.user_id = ? AND l2.user_id != ? " +
+                    "    GROUP BY l2.user_id " +
+                    "    ORDER BY common_likes DESC " +
+                    "    LIMIT 1" +
+                    ")" +
+                    "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, " +
+                    "       f.mpa_id, m.name AS mpa_name " +
+                    "FROM films f " +
+                    "JOIN mpa m ON m.mpa_id = f.mpa_id " +
+                    "WHERE f.film_id IN (" +
+                    "    SELECT DISTINCT l.film_id " +
+                    "    FROM likes l " +
+                    "    WHERE l.user_id IN (SELECT user_id FROM similar_users) " +
+                    "    AND l.film_id NOT IN (" +
+                    "        SELECT film_id FROM likes WHERE user_id = ?" +
+                    "    )" +
+                    ") " +
+                    "ORDER BY f.film_id " +
+                    "LIMIT ?";
 
     public FilmDbStorage(JdbcTemplate jdbc, FilmRowMapper mapper) {
         super(jdbc, mapper);
@@ -142,4 +166,12 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             }
         }, filmIds.toArray());
     }
+
+    @Override
+    public List<Film> getRecommendations(long userId, int limit) {
+        List<Film> films = findMany(FIND_RECOMMENDATIONS_QUERY, userId, userId, userId, limit);
+        loadGenres(films);
+        return films;
+    }
+
 }

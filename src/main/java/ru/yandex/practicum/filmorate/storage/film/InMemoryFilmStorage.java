@@ -1,12 +1,7 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -15,6 +10,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 public class InMemoryFilmStorage implements FilmStorage {
     private final Map<Long, Film> films = new HashMap<>();
     private long nextId = 1;
+    private final Map<Long, Set<Long>> filmLikes = new HashMap<>();
 
     @Override
     public Film add(Film film) {
@@ -50,5 +46,58 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .sorted(Comparator.comparingLong(Film::getId))
                 .limit(count)
                 .toList();
+    }
+
+    @Override
+    public List<Film> getRecommendations(long userId, int limit) {
+        Map<Long, Long> userIntersection = new HashMap<>();
+        Set<Long> userLikes = getLikesByUser(userId);
+
+        for (Map.Entry<Long, Set<Long>> entry : filmLikes.entrySet()) {
+            for (Long otherUserId : entry.getValue()) {
+                if (otherUserId == userId) continue;
+                Set<Long> otherUserLikes = getLikesByUser(otherUserId);
+                long intersection = userLikes.stream()
+                        .filter(otherUserLikes::contains)
+                        .count();
+                if (intersection > 0) {
+                    userIntersection.merge(otherUserId, intersection, Long::sum);
+                }
+            }
+        }
+
+        Long similarUserId = userIntersection.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(null);
+
+        if (similarUserId == null) {
+            return List.of();
+        }
+
+        Set<Long> similarUserLikes = getLikesByUser(similarUserId);
+        Set<Long> userLikesSet = getLikesByUser(userId);
+
+        return similarUserLikes.stream()
+                .filter(filmId -> !userLikesSet.contains(filmId))
+                .map(films::get)
+                .filter(Objects::nonNull)
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
+    private Set<Long> getLikesByUser(long userId) {
+        return filmLikes.entrySet().stream()
+                .filter(entry -> entry.getValue().contains(userId))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+    }
+
+    public void addLike(long filmId, long userId) {
+        filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).add(userId);
+    }
+
+    public void removeLike(long filmId, long userId) {
+        filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).remove(userId);
     }
 }
