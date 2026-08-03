@@ -73,4 +73,10 @@ public class FilmControllerImpl implements FilmController {
                                     @RequestParam(defaultValue = "likes") String sortBy) {
         return filmService.getByDirector(directorId, sortBy);
     }
+
+    @Override
+    @GetMapping("/search")
+    public List<Film> search(@RequestParam String query, @RequestParam String by) {
+        return filmService.search(query, by);
+    }
 }
