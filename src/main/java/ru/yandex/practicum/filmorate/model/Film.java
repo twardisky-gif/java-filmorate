@@ -23,4 +23,5 @@ public class Film {
     @NotNull(message = "Рейтинг MPA должен быть указан")
     private Mpa mpa;
     private Set<Genre> genres = new LinkedHashSet<>();
+    private Set<Director> directors = new LinkedHashSet<>();
 }

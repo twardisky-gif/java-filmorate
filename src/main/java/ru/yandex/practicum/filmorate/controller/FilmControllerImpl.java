@@ -66,4 +66,11 @@ public class FilmControllerImpl implements FilmController {
     public List<Film> getPopular(@RequestParam(defaultValue = "10") int count) {
         return filmService.getPopular(count);
     }
+
+    @Override
+    @GetMapping("/director/{directorId}")
+    public List<Film> getByDirector(@PathVariable long directorId,
+                                    @RequestParam(defaultValue = "likes") String sortBy) {
+        return filmService.getByDirector(directorId, sortBy);
+    }
 }
