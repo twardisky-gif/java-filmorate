@@ -1,17 +1,53 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import java.util.Collection;
+import java.util.List;
 
+import ru.yandex.practicum.filmorate.dto.DirectorDto;
 import ru.yandex.practicum.filmorate.model.Director;
 
+/**
+ * Операции над справочником режиссёров.
+ */
 public interface DirectorController {
-    Collection<Director> getAll();
 
-    Director getById(long id);
+    /**
+     * Возвращает всех режиссёров.
+     *
+     * @return список режиссёров
+     */
+    List<DirectorDto> getAll();
 
-    Director create(Director director);
+    /**
+     * Возвращает режиссёра по идентификатору.
+     *
+     * @param id идентификатор режиссёра
+     * @return найденный режиссёр
+     * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если режиссёр не найден
+     */
+    DirectorDto getById(long id);
 
-    Director update(Director director);
+    /**
+     * Добавляет нового режиссёра.
+     *
+     * @param director данные режиссёра
+     * @return созданный режиссёр
+     */
+    DirectorDto create(Director director);
 
+    /**
+     * Обновляет существующего режиссёра.
+     *
+     * @param director данные режиссёра с идентификатором
+     * @return обновлённый режиссёр
+     * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если режиссёр не найден
+     */
+    DirectorDto update(Director director);
+
+    /**
+     * Удаляет режиссёра.
+     *
+     * @param id идентификатор режиссёра
+     * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если режиссёр не найден
+     */
     void delete(long id);
 }

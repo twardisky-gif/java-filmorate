@@ -1,6 +1,6 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import java.util.Collection;
+import java.util.List;
 
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.yandex.practicum.filmorate.dto.DirectorDto;
+import ru.yandex.practicum.filmorate.mapper.DirectorMapper;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.service.DirectorService;
 
@@ -25,26 +27,26 @@ public class DirectorControllerImpl implements DirectorController {
 
     @Override
     @GetMapping
-    public Collection<Director> getAll() {
-        return directorService.getAll();
+    public List<DirectorDto> getAll() {
+        return DirectorMapper.toDto(directorService.getAll());
     }
 
     @Override
     @GetMapping("/{id}")
-    public Director getById(@PathVariable long id) {
-        return directorService.getById(id);
+    public DirectorDto getById(@PathVariable long id) {
+        return DirectorMapper.toDto(directorService.getById(id));
     }
 
     @Override
     @PostMapping
-    public Director create(@Valid @RequestBody Director director) {
-        return directorService.create(director);
+    public DirectorDto create(@Valid @RequestBody Director director) {
+        return DirectorMapper.toDto(directorService.create(director));
     }
 
     @Override
     @PutMapping
-    public Director update(@Valid @RequestBody Director director) {
-        return directorService.update(director);
+    public DirectorDto update(@Valid @RequestBody Director director) {
+        return DirectorMapper.toDto(directorService.update(director));
     }
 
     @Override

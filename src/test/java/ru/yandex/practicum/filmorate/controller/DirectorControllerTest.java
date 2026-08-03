@@ -1,6 +1,9 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -36,9 +39,9 @@ class DirectorControllerTest {
 
         mockMvc.perform(put("/directors")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"id": %d, "name": "Новое имя"}
-                                """.formatted(id)))
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "id", id,
+                                "name", "Новое имя"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Новое имя"));
 
@@ -53,12 +56,14 @@ class DirectorControllerTest {
     void shouldRejectBlankNameAndUnknownDirector() throws Exception {
         mockMvc.perform(post("/directors")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\": \" \"}"))
+                        .content(objectMapper.writeValueAsString(Map.of("name", " "))))
                 .andExpect(status().isBadRequest());
 
         mockMvc.perform(put("/directors")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"id\": 9999, \"name\": \"Неизвестный\"}"))
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "id", 9999,
+                                "name", "Неизвестный"))))
                 .andExpect(status().isNotFound());
     }
 
@@ -103,7 +108,7 @@ class DirectorControllerTest {
     private long createDirector(String name) throws Exception {
         String response = mockMvc.perform(post("/directors")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\": \"" + name + "\"}"))
+                        .content(objectMapper.writeValueAsString(Map.of("name", name))))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -114,16 +119,13 @@ class DirectorControllerTest {
     private long createFilm(String name, String releaseDate, long directorId) throws Exception {
         String response = mockMvc.perform(post("/films")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "name": "%s",
-                                  "description": "Описание",
-                                  "releaseDate": "%s",
-                                  "duration": 120,
-                                  "mpa": {"id": 3},
-                                  "directors": [{"id": %d}]
-                                }
-                                """.formatted(name, releaseDate, directorId)))
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "name", name,
+                                "description", "Описание",
+                                "releaseDate", releaseDate,
+                                "duration", 120,
+                                "mpa", Map.of("id", 3),
+                                "directors", List.of(Map.of("id", directorId))))))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -134,14 +136,11 @@ class DirectorControllerTest {
     private long createUser() throws Exception {
         String response = mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "email": "director-test@mail.ru",
-                                  "login": "director-test",
-                                  "name": "Пользователь",
-                                  "birthday": "1990-01-01"
-                                }
-                                """))
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", "director-test@mail.ru",
+                                "login", "director-test",
+                                "name", "Пользователь",
+                                "birthday", "1990-01-01"))))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
