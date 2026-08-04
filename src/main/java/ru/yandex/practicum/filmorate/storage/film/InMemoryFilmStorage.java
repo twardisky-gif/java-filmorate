@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -61,6 +62,17 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .filter(film -> film.getDirectors().stream()
                         .anyMatch(director -> director.getId() == directorId))
                 .sorted(comparator)
+                .toList();
+    }
+
+    @Override
+    public List<Film> search(String query, boolean byTitle, boolean byDirector) {
+        String normalizedQuery = query.toLowerCase(Locale.ROOT);
+        return films.values().stream()
+                .filter(film -> byTitle && film.getName().toLowerCase(Locale.ROOT).contains(normalizedQuery)
+                        || byDirector && film.getDirectors().stream()
+                        .anyMatch(director -> director.getName().toLowerCase(Locale.ROOT).contains(normalizedQuery)))
+                .sorted(Comparator.comparingLong(Film::getId))
                 .toList();
     }
 }

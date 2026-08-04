@@ -38,6 +38,10 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             + "LEFT JOIN likes l ON l.film_id = f.film_id "
             + "WHERE fd.director_id = ? "
             + "GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name ";
+    private static final String SEARCH_QUERY = SELECT_FILM_COLUMNS
+            + "LEFT JOIN film_directors fd ON fd.film_id = f.film_id "
+            + "LEFT JOIN directors d ON d.director_id = fd.director_id "
+            + "LEFT JOIN likes l ON l.film_id = f.film_id ";
     private static final String INSERT_QUERY =
             "INSERT INTO films (name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
     private static final String UPDATE_QUERY =
@@ -135,6 +139,29 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                 ? "ORDER BY f.release_date, f.film_id"
                 : "ORDER BY COUNT(l.user_id) DESC, f.film_id";
         List<Film> films = findMany(FIND_BY_DIRECTOR_QUERY + orderBy, directorId);
+        loadGenres(films);
+        loadDirectors(films);
+        return films;
+    }
+
+    @Override
+    public List<Film> search(String query, boolean byTitle, boolean byDirector) {
+        List<String> conditions = new ArrayList<>();
+        List<Object> parameters = new ArrayList<>();
+        String pattern = "%" + query.toLowerCase() + "%";
+        if (byTitle) {
+            conditions.add("LOWER(f.name) LIKE ?");
+            parameters.add(pattern);
+        }
+        if (byDirector) {
+            conditions.add("LOWER(d.name) LIKE ?");
+            parameters.add(pattern);
+        }
+        String sql = SEARCH_QUERY
+                + "WHERE " + String.join(" OR ", conditions) + " "
+                + "GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name "
+                + "ORDER BY COUNT(DISTINCT l.user_id) DESC, f.film_id";
+        List<Film> films = findMany(sql, parameters.toArray());
         loadGenres(films);
         loadDirectors(films);
         return films;

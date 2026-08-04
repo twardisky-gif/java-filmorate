@@ -1,9 +1,13 @@
 package ru.yandex.practicum.filmorate.service;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -110,6 +114,21 @@ public class FilmServiceImpl implements FilmService {
             throw new ValidationException("Параметр sortBy должен иметь значение year или likes");
         }
         return filmStorage.getByDirector(directorId, sortBy);
+    }
+
+    @Override
+    public List<Film> search(String query, String by) {
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+        Set<String> searchBy = Arrays.stream(by.toLowerCase(Locale.ROOT).split(","))
+                .map(String::trim)
+                .collect(Collectors.toSet());
+        if (searchBy.isEmpty() || searchBy.stream().anyMatch(value -> !value.equals("title")
+                && !value.equals("director"))) {
+            throw new ValidationException("Параметр by должен содержать title, director или оба значения");
+        }
+        return filmStorage.search(query, searchBy.contains("title"), searchBy.contains("director"));
     }
 
     private void validateReleaseDate(Film film) {
