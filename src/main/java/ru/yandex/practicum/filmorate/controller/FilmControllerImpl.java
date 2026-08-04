@@ -90,4 +90,11 @@ public class FilmControllerImpl implements FilmController {
     public List<Film> search(@RequestParam String query, @RequestParam String by) {
         return filmService.search(query, by);
     }
+
+    @Override
+    @GetMapping("/common")
+    public List<Film> getCommonFilms(@RequestParam long userId, @RequestParam long friendId) {
+        log.info("Запрошены общие фильмы для пользоьвателей {} и {}", userId, friendId);
+        return filmService.getCommonFilms(userId, friendId);
+    }
 }

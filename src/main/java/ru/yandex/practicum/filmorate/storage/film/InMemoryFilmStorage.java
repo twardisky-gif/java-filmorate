@@ -2,6 +2,11 @@ package ru.yandex.practicum.filmorate.storage.film;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+
 
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -114,12 +119,6 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .toList();
     }
 
-    private Set<Long> getLikesByUser(long userId) {
-        return filmLikes.entrySet().stream()
-                .filter(entry -> entry.getValue().contains(userId))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
-    }
 
     public void addLike(long filmId, long userId) {
         filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).add(userId);
@@ -127,5 +126,31 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     public void removeLike(long filmId, long userId) {
         filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).remove(userId);
+    }
+
+    @Override
+    public List<Film> getCommonFilms(long userId, long friendId) {
+        Set<Long> userLikes = getLikesByUser(userId);
+        Set<Long> friendLikes = getLikesByUser(friendId);
+
+        Set<Long> commonFilmIds = new HashSet<>(userLikes);
+        commonFilmIds.retainAll(friendLikes);
+
+        return commonFilmIds.stream()
+                .map(films::get)
+                .filter(Objects::nonNull)
+                .sorted((f1, f2) -> {
+                    long likes1 = filmLikes.getOrDefault(f1.getId(), Collections.emptySet()).size();
+                    long likes2 = filmLikes.getOrDefault(f2.getId(), Collections.emptySet()).size();
+                    return Long.compare(likes2, likes1); // По убыванию
+                })
+                .collect(Collectors.toList());
+    }
+
+    private Set<Long> getLikesByUser(long userId) {
+        return filmLikes.entrySet().stream()
+                .filter(entry -> entry.getValue().contains(userId))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
     }
 }

@@ -204,5 +204,15 @@ public class FilmServiceImpl implements FilmService {
         log.info("Для пользователя {} найдено {} рекомендаций", userId, recommendations.size());
         return recommendations;
     }
+
+    @Override
+    public List<Film> getCommonFilms(long userId, long friendId) {
+        userService.getById(userId);
+        userService.getById(friendId);
+
+        List<Film> commonFilms = filmStorage.getCommonFilms(userId, friendId);
+        log.info("Найдено {} общих фильмов у пользователей {} и {}", commonFilms.size(), userId, friendId);
+        return commonFilms;
+    }
 }
 
