@@ -73,4 +73,8 @@ public interface FilmController {
      * @return список фильмов по убыванию популярности
      */
     List<Film> getPopular(int count);
+
+    List<Film> getByDirector(long directorId, String sortBy);
+
+    List<Film> search(String query, String by);
 }

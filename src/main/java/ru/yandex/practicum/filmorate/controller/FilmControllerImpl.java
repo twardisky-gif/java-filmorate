@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
+@Slf4j
 @RestController
 @RequestMapping("/films")
 public class FilmControllerImpl implements FilmController {
@@ -71,5 +73,18 @@ public class FilmControllerImpl implements FilmController {
     @GetMapping("/popular")
     public List<Film> getPopular(@RequestParam(defaultValue = "10") int count) {
         return filmService.getPopular(count);
+    }
+
+    @Override
+    @GetMapping("/director/{directorId}")
+    public List<Film> getByDirector(@PathVariable long directorId,
+                                    @RequestParam(defaultValue = "likes") String sortBy) {
+        return filmService.getByDirector(directorId, sortBy);
+    }
+
+    @Override
+    @GetMapping("/search")
+    public List<Film> search(@RequestParam String query, @RequestParam String by) {
+        return filmService.search(query, by);
     }
 }
