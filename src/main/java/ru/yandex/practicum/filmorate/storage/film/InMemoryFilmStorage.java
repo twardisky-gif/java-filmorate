@@ -48,44 +48,6 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .toList();
     }
 
-    @Override
-    public List<Film> getRecommendations(long userId, int limit) {
-        Map<Long, Long> userIntersection = new HashMap<>();
-        Set<Long> userLikes = getLikesByUser(userId);
-
-        for (Map.Entry<Long, Set<Long>> entry : filmLikes.entrySet()) {
-            for (Long otherUserId : entry.getValue()) {
-                if (otherUserId == userId) continue;
-                Set<Long> otherUserLikes = getLikesByUser(otherUserId);
-                long intersection = userLikes.stream()
-                        .filter(otherUserLikes::contains)
-                        .count();
-                if (intersection > 0) {
-                    userIntersection.merge(otherUserId, intersection, Long::sum);
-                }
-            }
-        }
-
-        Long similarUserId = userIntersection.entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .map(Map.Entry::getKey)
-                .orElse(null);
-
-        if (similarUserId == null) {
-            return List.of();
-        }
-
-        Set<Long> similarUserLikes = getLikesByUser(similarUserId);
-        Set<Long> userLikesSet = getLikesByUser(userId);
-
-        return similarUserLikes.stream()
-                .filter(filmId -> !userLikesSet.contains(filmId))
-                .map(films::get)
-                .filter(Objects::nonNull)
-                .limit(limit)
-                .collect(Collectors.toList());
-    }
-
     private Set<Long> getLikesByUser(long userId) {
         return filmLikes.entrySet().stream()
                 .filter(entry -> entry.getValue().contains(userId))
@@ -99,5 +61,10 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     public void removeLike(long filmId, long userId) {
         filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).remove(userId);
+    }
+
+    @Override
+    public List<Film> getRecommendations(long userId, int limit) {
+        return List.of();
     }
 }
