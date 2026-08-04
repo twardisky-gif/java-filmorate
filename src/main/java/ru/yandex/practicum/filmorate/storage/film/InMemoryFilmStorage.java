@@ -26,8 +26,8 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public void delete(long id) {
-        films.remove(id);
+    public boolean delete(long id) {
+        return films.remove(id) != null;
     }
 
     @Override
@@ -48,6 +48,66 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .toList();
     }
 
+    @Override
+    public List<Film> getRecommendations(long userId, int limit) {
+        Set<Long> userLikes = getLikesByUser(userId);
+
+        Map<Long, Long> similarity = new HashMap<>();
+        for (Map.Entry<Long, Set<Long>> entry : filmLikes.entrySet()) {
+            for (Long otherUserId : entry.getValue()) {
+                if (otherUserId == userId) continue;
+                Set<Long> otherLikes = getLikesByUser(otherUserId);
+                long intersection = userLikes.stream()
+                        .filter(otherLikes::contains)
+                        .count();
+                if (intersection > 0) {
+                    similarity.merge(otherUserId, intersection, Long::sum);
+                }
+            }
+        }
+
+        Long similarUserId = similarity.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(null);
+
+        if (similarUserId == null) {
+            return List.of();
+        }
+
+        Set<Long> similarLikes = getLikesByUser(similarUserId);
+
+        return similarLikes.stream()
+                .filter(filmId -> !userLikes.contains(filmId))
+                .map(films::get)
+                .filter(Objects::nonNull)
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Film> getByDirector(long directorId, String sortBy) {
+        Comparator<Film> comparator = sortBy.equals("year")
+                ? Comparator.comparing(Film::getReleaseDate).thenComparingLong(Film::getId)
+                : Comparator.comparingLong(Film::getId);
+        return films.values().stream()
+                .filter(film -> film.getDirectors().stream()
+                        .anyMatch(director -> director.getId() == directorId))
+                .sorted(comparator)
+                .toList();
+    }
+
+    @Override
+    public List<Film> search(String query, boolean byTitle, boolean byDirector) {
+        String normalizedQuery = query.toLowerCase(Locale.ROOT);
+        return films.values().stream()
+                .filter(film -> byTitle && film.getName().toLowerCase(Locale.ROOT).contains(normalizedQuery)
+                        || byDirector && film.getDirectors().stream()
+                        .anyMatch(director -> director.getName().toLowerCase(Locale.ROOT).contains(normalizedQuery)))
+                .sorted(Comparator.comparingLong(Film::getId))
+                .toList();
+    }
+
     private Set<Long> getLikesByUser(long userId) {
         return filmLikes.entrySet().stream()
                 .filter(entry -> entry.getValue().contains(userId))
@@ -61,10 +121,5 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     public void removeLike(long filmId, long userId) {
         filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).remove(userId);
-    }
-
-    @Override
-    public List<Film> getRecommendations(long userId, int limit) {
-        return List.of();
     }
 }

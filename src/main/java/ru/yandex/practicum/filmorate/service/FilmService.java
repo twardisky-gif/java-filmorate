@@ -10,6 +10,8 @@ public interface FilmService {
 
     Film update(Film film);
 
+    void removeFilm(Long id);
+
     Film getById(long id);
 
     Collection<Film> getAll();
@@ -20,5 +22,7 @@ public interface FilmService {
 
     List<Film> getPopular(int count);
 
-    List<Film> getRecommendations(long userId, int limit);
+    List<Film> getByDirector(long directorId, String sortBy);
+
+    List<Film> search(String query, String by);
 }
