@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.service;
 import java.util.Collection;
 import java.util.List;
 
-import lombok.extern.java.Log;
 import ru.yandex.practicum.filmorate.model.Film;
 
 public interface FilmService {
