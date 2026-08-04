@@ -294,8 +294,9 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         }, filmIds.toArray());
 
     }
+
     @Override
-    public List<Film> getCommonFilms (long userId, long friendId) {
+    public List<Film> getCommonFilms(long userId, long friendId) {
         List<Film> films = findMany(FIND_COMMON_FILMS_QUERY, userId, friendId);
         loadGenres(films);
         loadDirectors(films);
