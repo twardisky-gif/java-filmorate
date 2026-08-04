@@ -13,9 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.greaterThan;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -203,5 +201,26 @@ class FilmControllerTest {
         mockMvc.perform(get("/films/popular"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(greaterThan(0)));
+    }
+
+    @Test
+    void shouldReturn404WhenDeletingUnknownFilm() throws Exception {
+        // Пытаемся удалить несуществующий фильм
+        mockMvc.perform(delete("/films/" + UNKNOWN_ID))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldDeleteFilmSuccessfully() throws Exception {
+        long filmId = createFilm();
+
+        mockMvc.perform(get("/films/" + filmId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/films/" + filmId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/films/" + filmId))
+                .andExpect(status().isNotFound());
     }
 }
