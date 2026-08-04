@@ -46,15 +46,22 @@ public interface FilmController {
     /**
      * Ставит лайк фильму от имени пользователя.
      *
-     * @param id идентификатор фильма
+     * @param id     идентификатор фильма
      * @param userId идентификатор пользователя
      */
     void addLike(long id, long userId);
 
     /**
-     * Удаляет лайк пользователя у фильма.
+     * Удаляет фильм.
      *
      * @param id идентификатор фильма
+     */
+    void removeFilm(long id);
+
+    /**
+     * Удаляет лайк пользователя у фильма.
+     *
+     * @param id     идентификатор фильма
      * @param userId идентификатор пользователя
      */
     void removeLike(long id, long userId);
@@ -66,4 +73,8 @@ public interface FilmController {
      * @return список фильмов по убыванию популярности
      */
     List<Film> getPopular(int count);
+
+    List<Film> getByDirector(long directorId, String sortBy);
+
+    List<Film> search(String query, String by);
 }

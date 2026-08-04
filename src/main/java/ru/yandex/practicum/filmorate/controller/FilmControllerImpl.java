@@ -50,6 +50,12 @@ public class FilmControllerImpl implements FilmController {
     }
 
     @Override
+    @DeleteMapping("/{id}")
+    public void removeFilm(@PathVariable long id) {
+        filmService.removeFilm(id);
+    }
+
+    @Override
     @PutMapping("/{id}/like/{userId}")
     public void addLike(@PathVariable long id, @PathVariable long userId) {
         filmService.addLike(id, userId);
@@ -65,5 +71,18 @@ public class FilmControllerImpl implements FilmController {
     @GetMapping("/popular")
     public List<Film> getPopular(@RequestParam(defaultValue = "10") int count) {
         return filmService.getPopular(count);
+    }
+
+    @Override
+    @GetMapping("/director/{directorId}")
+    public List<Film> getByDirector(@PathVariable long directorId,
+                                    @RequestParam(defaultValue = "likes") String sortBy) {
+        return filmService.getByDirector(directorId, sortBy);
+    }
+
+    @Override
+    @GetMapping("/search")
+    public List<Film> search(@RequestParam String query, @RequestParam String by) {
+        return filmService.search(query, by);
     }
 }

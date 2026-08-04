@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -30,8 +31,8 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public void delete(long id) {
-        films.remove(id);
+    public boolean delete(long id) {
+        return films.remove(id) != null;
     }
 
     @Override
@@ -49,6 +50,29 @@ public class InMemoryFilmStorage implements FilmStorage {
         return films.values().stream()
                 .sorted(Comparator.comparingLong(Film::getId))
                 .limit(count)
+                .toList();
+    }
+
+    @Override
+    public List<Film> getByDirector(long directorId, String sortBy) {
+        Comparator<Film> comparator = sortBy.equals("year")
+                ? Comparator.comparing(Film::getReleaseDate).thenComparingLong(Film::getId)
+                : Comparator.comparingLong(Film::getId);
+        return films.values().stream()
+                .filter(film -> film.getDirectors().stream()
+                        .anyMatch(director -> director.getId() == directorId))
+                .sorted(comparator)
+                .toList();
+    }
+
+    @Override
+    public List<Film> search(String query, boolean byTitle, boolean byDirector) {
+        String normalizedQuery = query.toLowerCase(Locale.ROOT);
+        return films.values().stream()
+                .filter(film -> byTitle && film.getName().toLowerCase(Locale.ROOT).contains(normalizedQuery)
+                        || byDirector && film.getDirectors().stream()
+                        .anyMatch(director -> director.getName().toLowerCase(Locale.ROOT).contains(normalizedQuery)))
+                .sorted(Comparator.comparingLong(Film::getId))
                 .toList();
     }
 }
