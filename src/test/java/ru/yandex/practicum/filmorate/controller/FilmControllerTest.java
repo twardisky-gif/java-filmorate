@@ -270,4 +270,26 @@ class FilmControllerTest {
                 .andExpect(jsonPath("$[0].id").value(film2Id))
                 .andExpect(jsonPath("$[0].name").value("Фильм 2"));
     }
+
+    @Test
+    @DisplayName("DELETE /films/{id} - удаление несуществующего фильма")
+    void shouldReturn404WhenDeletingUnknownFilm() throws Exception {
+        mockMvc.perform(delete("/films/" + UNKNOWN_ID))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("DELETE /films/{id} - удаление фильма по идентификатору")
+    void shouldDeleteFilmSuccessfully() throws Exception {
+        long filmId = createFilm();
+
+        mockMvc.perform(get("/films/" + filmId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/films/" + filmId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/films/" + filmId))
+                .andExpect(status().isNotFound());
+    }
 }

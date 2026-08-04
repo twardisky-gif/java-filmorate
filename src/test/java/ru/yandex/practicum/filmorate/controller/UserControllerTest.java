@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -188,5 +189,27 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].id").value(commonId));
+    }
+
+    @Test
+    @DisplayName("DELETE /users/{id} - удаление несуществующего пользователя")
+    void shouldReturn404WhenDeletingUnknownFilm() throws Exception {
+        mockMvc.perform(delete("/users/" + UNKNOWN_ID))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("DELETE /users/{id} - удаление пользователя по идентификатору")
+    void shouldDeleteFilmSuccessfully() throws Exception {
+        long userId = createUser();
+
+        mockMvc.perform(get("/users/" + userId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/users/" + userId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/users/" + userId))
+                .andExpect(status().isNotFound());
     }
 }
