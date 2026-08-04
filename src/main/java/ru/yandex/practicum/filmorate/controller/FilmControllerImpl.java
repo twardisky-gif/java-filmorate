@@ -50,6 +50,12 @@ public class FilmControllerImpl implements FilmController {
     }
 
     @Override
+    @DeleteMapping("/{id}")
+    public void removeFilm(@PathVariable long id) {
+        filmService.removeFilm(id);
+    }
+
+    @Override
     @PutMapping("/{id}/like/{userId}")
     public void addLike(@PathVariable long id, @PathVariable long userId) {
         filmService.addLike(id, userId);
