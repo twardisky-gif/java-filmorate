@@ -199,15 +199,15 @@ class UserControllerTest {
 
     @Test
     void shouldDeleteUserSuccessfully() throws Exception {
-        long filmId = createUser();
+        long userId = createUser();
 
-        mockMvc.perform(get("/users/" + filmId))
+        mockMvc.perform(get("/users/" + userId))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(delete("/users/" + filmId))
+        mockMvc.perform(delete("/users/" + userId))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/users/" + filmId))
+        mockMvc.perform(get("/users/" + userId))
                 .andExpect(status().isNotFound());
     }
 }
