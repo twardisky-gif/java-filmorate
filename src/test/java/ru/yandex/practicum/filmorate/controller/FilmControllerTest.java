@@ -266,6 +266,8 @@ class FilmControllerTest {
         mockMvc.perform(get("/users/{id}/recommendations", user2Id)
                         .param("count", "5"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(lessThanOrEqualTo(1))));
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id").value(film2Id))
+                .andExpect(jsonPath("$[0].name").value("Фильм 2"));
     }
 }

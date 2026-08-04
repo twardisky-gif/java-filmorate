@@ -70,15 +70,22 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                     + "WHERE fd.film_id IN (%s) "
                     + "ORDER BY fd.film_id, d.director_id";
     private static final String FIND_RECOMMENDATIONS_QUERY =
-            "WITH similar_users AS (" +
+            "WITH max_intersection AS (" +
+                    "    SELECT MAX(common_likes) as max_count FROM (" +
+                    "        SELECT COUNT(*) as common_likes " +
+                    "        FROM likes l1 " +
+                    "        JOIN likes l2 ON l1.film_id = l2.film_id " +
+                    "        WHERE l1.user_id = ? AND l2.user_id != ? " +
+                    "        GROUP BY l2.user_id" +
+                    "    )" +
+                    ")," +
+                    "similar_users AS (" +
                     "    SELECT l2.user_id, COUNT(*) as common_likes " +
                     "    FROM likes l1 " +
                     "    JOIN likes l2 ON l1.film_id = l2.film_id " +
                     "    WHERE l1.user_id = ? AND l2.user_id != ? " +
                     "    GROUP BY l2.user_id " +
-                    "    HAVING COUNT(*) > 0 " +
-                    "    ORDER BY common_likes DESC, l2.user_id " +
-                    "    LIMIT 1" +
+                    "    HAVING COUNT(*) = (SELECT max_count FROM max_intersection)" +
                     ")" +
                     "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, " +
                     "       f.mpa_id, m.name AS mpa_name " +
@@ -194,7 +201,8 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
     @Override
     public List<Film> getRecommendations(long userId, int limit) {
-        List<Film> films = findMany(FIND_RECOMMENDATIONS_QUERY, userId, userId, userId, limit);
+        List<Film> films = findMany(FIND_RECOMMENDATIONS_QUERY,
+                userId, userId, userId, userId, userId, limit);
         loadGenres(films);
         loadDirectors(films);
         return films;
