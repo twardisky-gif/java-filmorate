@@ -56,7 +56,8 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                     "    JOIN likes l2 ON l1.film_id = l2.film_id " +
                     "    WHERE l1.user_id = ? AND l2.user_id != ? " +
                     "    GROUP BY l2.user_id " +
-                    "    ORDER BY common_likes DESC " +
+                    "    HAVING COUNT(*) > 0 " +
+                    "    ORDER BY common_likes DESC, l2.user_id " +
                     "    LIMIT 1" +
                     ")" +
                     "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, " +

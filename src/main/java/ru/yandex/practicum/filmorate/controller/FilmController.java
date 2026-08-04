@@ -67,5 +67,4 @@ public interface FilmController {
      */
     List<Film> getPopular(int count);
 
-    List<Film> getRecommendations(long userId, int count);
 }

@@ -14,10 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -49,6 +46,15 @@ class FilmControllerTest {
         return film;
     }
 
+    private Map<String, Object> validUser(String email, String login, String name) {
+        Map<String, Object> user = new LinkedHashMap<>();
+        user.put("email", email);
+        user.put("login", login);
+        user.put("name", name);
+        user.put("birthday", "1990-01-01");
+        return user;
+    }
+
     private String asJson(Object body) throws Exception {
         return objectMapper.writeValueAsString(body);
     }
@@ -62,6 +68,22 @@ class FilmControllerTest {
                 .getResponse()
                 .getContentAsString();
         return objectMapper.readTree(response).get("id").asLong();
+    }
+
+    private long createUser(String email, String login, String name) throws Exception {
+        String response = mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJson(validUser(email, login, name))))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        return objectMapper.readTree(response).get("id").asLong();
+    }
+
+    private void addLike(long filmId, long userId) throws Exception {
+        mockMvc.perform(put("/films/{filmId}/like/{userId}", filmId, userId))
+                .andExpect(status().isOk());
     }
 
     private void expectCreateStatus(Map<String, Object> film, int expectedStatus) throws Exception {
@@ -210,10 +232,55 @@ class FilmControllerTest {
     @Test
     @DisplayName("GET /users/{id}/recommendations должен возвращать рекомендации")
     void shouldReturnRecommendations() throws Exception {
+        long user1Id = createUser("user1@test.com", "user1", "User One");
+        long user2Id = createUser("user2@test.com", "user2", "User Two");
 
-        mockMvc.perform(get("/users/1/recommendations")
+        Map<String, Object> film1Data = validFilm();
+        film1Data.put("name", "Фильм 1");
+        Map<String, Object> film2Data = validFilm();
+        film2Data.put("name", "Фильм 2");
+        Map<String, Object> film3Data = validFilm();
+        film3Data.put("name", "Фильм 3");
+
+        String response1 = mockMvc.perform(post("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJson(film1Data)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        long film1Id = objectMapper.readTree(response1).get("id").asLong();
+
+        String response2 = mockMvc.perform(post("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJson(film2Data)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        long film2Id = objectMapper.readTree(response2).get("id").asLong();
+
+        String response3 = mockMvc.perform(post("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJson(film3Data)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        long film3Id = objectMapper.readTree(response3).get("id").asLong();
+
+        addLike(film1Id, user1Id);
+        addLike(film2Id, user1Id);
+
+        addLike(film1Id, user2Id);
+        addLike(film3Id, user2Id);
+
+        mockMvc.perform(get("/users/{id}/recommendations", user1Id)
                         .param("count", "5"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(lessThanOrEqualTo(5))));
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id").value(film3Id))
+                .andExpect(jsonPath("$[0].name").value("Фильм 3"));
+
+        mockMvc.perform(get("/users/{id}/recommendations", user2Id)
+                        .param("count", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id").value(film2Id))
+                .andExpect(jsonPath("$[0].name").value("Фильм 2"));
     }
 }
