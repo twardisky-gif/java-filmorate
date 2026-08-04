@@ -51,4 +51,16 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .limit(count)
                 .toList();
     }
+
+    @Override
+    public List<Film> getByDirector(long directorId, String sortBy) {
+        Comparator<Film> comparator = sortBy.equals("year")
+                ? Comparator.comparing(Film::getReleaseDate).thenComparingLong(Film::getId)
+                : Comparator.comparingLong(Film::getId);
+        return films.values().stream()
+                .filter(film -> film.getDirectors().stream()
+                        .anyMatch(director -> director.getId() == directorId))
+                .sorted(comparator)
+                .toList();
+    }
 }
