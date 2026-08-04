@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.controller;
 import java.util.Collection;
 import java.util.List;
 
+import org.springframework.web.bind.annotation.RequestParam;
 import ru.yandex.practicum.filmorate.model.Film;
 
 /**
@@ -69,12 +70,16 @@ public interface FilmController {
     /**
      * Возвращает самые популярные фильмы по количеству лайков.
      *
-     * @param count размер выборки
+     * @param count   размер выборки
+     * @param genreId идентификатор жанра по которому хотим фильтровать
+     * @param year    год фильма по которому хотим фильтровать
      * @return список фильмов по убыванию популярности
      */
-    List<Film> getPopular(int count);
+    List<Film> getPopular(int count, Integer genreId, Integer year);
 
     List<Film> getByDirector(long directorId, String sortBy);
 
     List<Film> search(String query, String by);
+
+    List<Film> getCommonFilms(@RequestParam long userId, @RequestParam long friendId);
 }

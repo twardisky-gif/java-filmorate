@@ -28,11 +28,14 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                     + "JOIN mpa m ON m.mpa_id = f.mpa_id ";
     private static final String FIND_ALL_QUERY = SELECT_FILM_COLUMNS + "ORDER BY f.film_id";
     private static final String FIND_BY_ID_QUERY = SELECT_FILM_COLUMNS + "WHERE f.film_id = ?";
-    private static final String FIND_POPULAR_QUERY = SELECT_FILM_COLUMNS
-            + "LEFT JOIN likes l ON l.film_id = f.film_id "
-            + "GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name "
-            + "ORDER BY COUNT(l.user_id) DESC, f.film_id "
-            + "LIMIT ?";
+    private static final String FIND_POPULAR_QUERY =
+            "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name, "
+                    + "COUNT(DISTINCT l.user_id) AS likes_count "
+                    + "FROM films f "
+                    + "JOIN mpa m ON m.mpa_id = f.mpa_id "
+                    + "LEFT JOIN likes l ON l.film_id = f.film_id "
+                    + "LEFT JOIN film_genres fg ON fg.film_id = f.film_id "
+                    + "WHERE 1=1 ";
     private static final String FIND_BY_DIRECTOR_QUERY = SELECT_FILM_COLUMNS
             + "JOIN film_directors fd ON fd.film_id = f.film_id "
             + "LEFT JOIN likes l ON l.film_id = f.film_id "
@@ -69,6 +72,52 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                     + "JOIN directors d ON d.director_id = fd.director_id "
                     + "WHERE fd.film_id IN (%s) "
                     + "ORDER BY fd.film_id, d.director_id";
+    private static final String FIND_RECOMMENDATIONS_QUERY =
+            "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, " +
+                    "       f.mpa_id, m.name AS mpa_name " +
+                    "FROM films f " +
+                    "JOIN mpa m ON m.mpa_id = f.mpa_id " +
+                    "WHERE f.film_id IN (" +
+                    "    SELECT DISTINCT l.film_id " +
+                    "    FROM likes l " +
+                    "    WHERE l.user_id IN (" +
+                    "        SELECT l2.user_id " +
+                    "        FROM likes l1 " +
+                    "        JOIN likes l2 ON l1.film_id = l2.film_id " +
+                    "        WHERE l1.user_id = ? " +
+                    "        AND l2.user_id != ? " +
+                    "        GROUP BY l2.user_id " +
+                    "        HAVING COUNT(*) = (" +
+                    "            SELECT MAX(cnt) FROM (" +
+                    "                SELECT COUNT(*) as cnt " +
+                    "                FROM likes l3 " +
+                    "                JOIN likes l4 ON l3.film_id = l4.film_id " +
+                    "                WHERE l3.user_id = ? " +
+                    "                AND l4.user_id != ? " +
+                    "                GROUP BY l4.user_id" +
+                    "            )" +
+                    "        )" +
+                    "    )" +
+                    "    AND l.film_id NOT IN (" +
+                    "        SELECT film_id FROM likes WHERE user_id = ?" +
+                    "    )" +
+                    ") " +
+                    "ORDER BY f.film_id " +
+                    "LIMIT ?";
+    private static final String FIND_COMMON_FILMS_QUERY =
+            "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, " +
+                    "       f.mpa_id, m.name AS mpa_name " +
+                    "FROM films f " +
+                    "JOIN mpa m ON m.mpa_id = f.mpa_id " +
+                    "WHERE f.film_id IN (" +
+                    "    SELECT l1.film_id " +
+                    "    FROM likes l1 " +
+                    "    JOIN likes l2 ON l1.film_id = l2.film_id " +
+                    "    WHERE l1.user_id = ? AND l2.user_id = ?" +
+                    ") " +
+                    "ORDER BY (" +
+                    "    SELECT COUNT(*) FROM likes l WHERE l.film_id = f.film_id" +
+                    ") DESC, f.film_id";
 
     public FilmDbStorage(JdbcTemplate jdbc, FilmRowMapper mapper) {
         super(jdbc, mapper);
@@ -126,8 +175,33 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     }
 
     @Override
-    public List<Film> getPopular(int count) {
-        List<Film> films = findMany(FIND_POPULAR_QUERY, count);
+    public List<Film> getPopular(int count, Integer genreId, Integer year) {
+        // Строим динамический запрос
+        StringBuilder queryBuilder = new StringBuilder(FIND_POPULAR_QUERY);
+        List<Object> params = new ArrayList<>();
+
+        // Фильтр по году
+        if (year != null) {
+            queryBuilder.append("AND YEAR(f.release_date) = ? ");
+            params.add(year);
+        }
+
+        // Фильтр по жанру
+        if (genreId != null) {
+            queryBuilder.append("AND fg.genre_id = ? ");
+            params.add(genreId);
+        }
+
+        // Группировка и сортировка
+        queryBuilder.append("GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name ")
+                .append("ORDER BY likes_count DESC, f.film_id ");
+
+        // Лимит
+        queryBuilder.append("LIMIT ?");
+        params.add(count);
+
+        // Выполняем запрос
+        List<Film> films = findMany(queryBuilder.toString(), params.toArray());
         loadGenres(films);
         loadDirectors(films);
         return films;
@@ -162,6 +236,15 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                 + "GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name "
                 + "ORDER BY COUNT(DISTINCT l.user_id) DESC, f.film_id";
         List<Film> films = findMany(sql, parameters.toArray());
+        loadGenres(films);
+        loadDirectors(films);
+        return films;
+    }
+
+    @Override
+    public List<Film> getRecommendations(long userId, int limit) {
+        List<Film> films = findMany(FIND_RECOMMENDATIONS_QUERY,
+                userId, userId, userId, userId, userId, limit);
         loadGenres(films);
         loadDirectors(films);
         return films;
@@ -237,5 +320,14 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                 film.getDirectors().add(new Director(rs.getLong("director_id"), rs.getString("name")));
             }
         }, filmIds.toArray());
+
+    }
+
+    @Override
+    public List<Film> getCommonFilms(long userId, long friendId) {
+        List<Film> films = findMany(FIND_COMMON_FILMS_QUERY, userId, friendId);
+        loadGenres(films);
+        loadDirectors(films);
+        return films;
     }
 }

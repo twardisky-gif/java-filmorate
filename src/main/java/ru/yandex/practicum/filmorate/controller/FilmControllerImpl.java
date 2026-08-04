@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
+@Slf4j
 @RestController
 @RequestMapping("/films")
 public class FilmControllerImpl implements FilmController {
@@ -69,8 +71,11 @@ public class FilmControllerImpl implements FilmController {
 
     @Override
     @GetMapping("/popular")
-    public List<Film> getPopular(@RequestParam(defaultValue = "10") int count) {
-        return filmService.getPopular(count);
+    public List<Film> getPopular(@RequestParam(defaultValue = "10") int count,
+                                 @RequestParam(required = false) Integer genreId,
+                                 @RequestParam(required = false) Integer year
+    ) {
+        return filmService.getPopular(count, genreId, year);
     }
 
     @Override
@@ -84,5 +89,12 @@ public class FilmControllerImpl implements FilmController {
     @GetMapping("/search")
     public List<Film> search(@RequestParam String query, @RequestParam String by) {
         return filmService.search(query, by);
+    }
+
+    @Override
+    @GetMapping("/common")
+    public List<Film> getCommonFilms(@RequestParam long userId, @RequestParam long friendId) {
+        log.info("Запрошены общие фильмы для пользоьвателей {} и {}", userId, friendId);
+        return filmService.getCommonFilms(userId, friendId);
     }
 }

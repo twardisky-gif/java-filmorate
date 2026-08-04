@@ -29,6 +29,7 @@ import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 public class FilmServiceImpl implements FilmService {
     private static final LocalDate CINEMA_BIRTHDAY = LocalDate.of(1895, 12, 28);
     private static final int DEFAULT_POPULAR_COUNT = 10;
+    private static final int DEFAULT_RECOMMENDATIONS_LIMIT = 10;
 
     private final FilmStorage filmStorage;
     private final LikeStorage likeStorage;
@@ -109,9 +110,9 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
-    public List<Film> getPopular(int count) {
+    public List<Film> getPopular(int count, Integer genreId, Integer year) {
         int limit = count > 0 ? count : DEFAULT_POPULAR_COUNT;
-        return filmStorage.getPopular(limit);
+        return filmStorage.getPopular(limit, genreId, year);
     }
 
     @Override
@@ -192,4 +193,26 @@ public class FilmServiceImpl implements FilmService {
         return filmStorage.getById(id)
                 .orElseThrow(() -> new NotFoundException("Фильм с id=" + id + " не найден"));
     }
+
+    @Override
+    public List<Film> getRecommendations(long userId, int limit) {
+        userService.getById(userId);
+
+        int count = limit > 0 ? limit : DEFAULT_RECOMMENDATIONS_LIMIT;
+        List<Film> recommendations = filmStorage.getRecommendations(userId, count);
+
+        log.info("Для пользователя {} найдено {} рекомендаций", userId, recommendations.size());
+        return recommendations;
+    }
+
+    @Override
+    public List<Film> getCommonFilms(long userId, long friendId) {
+        userService.getById(userId);
+        userService.getById(friendId);
+
+        List<Film> commonFilms = filmStorage.getCommonFilms(userId, friendId);
+        log.info("Найдено {} общих фильмов у пользователей {} и {}", commonFilms.size(), userId, friendId);
+        return commonFilms;
+    }
 }
+
