@@ -69,6 +69,31 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                     + "JOIN directors d ON d.director_id = fd.director_id "
                     + "WHERE fd.film_id IN (%s) "
                     + "ORDER BY fd.film_id, d.director_id";
+    private static final String FIND_RECOMMENDATIONS_QUERY =
+            "WITH similar_users AS (" +
+                    "    SELECT l2.user_id, COUNT(*) as common_likes " +
+                    "    FROM likes l1 " +
+                    "    JOIN likes l2 ON l1.film_id = l2.film_id " +
+                    "    WHERE l1.user_id = ? AND l2.user_id != ? " +
+                    "    GROUP BY l2.user_id " +
+                    "    HAVING COUNT(*) > 0 " +
+                    "    ORDER BY common_likes DESC, l2.user_id " +
+                    "    LIMIT 1" +
+                    ")" +
+                    "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, " +
+                    "       f.mpa_id, m.name AS mpa_name " +
+                    "FROM films f " +
+                    "JOIN mpa m ON m.mpa_id = f.mpa_id " +
+                    "WHERE f.film_id IN (" +
+                    "    SELECT DISTINCT l.film_id " +
+                    "    FROM likes l " +
+                    "    WHERE l.user_id IN (SELECT user_id FROM similar_users) " +
+                    "    AND l.film_id NOT IN (" +
+                    "        SELECT film_id FROM likes WHERE user_id = ?" +
+                    "    )" +
+                    ") " +
+                    "ORDER BY f.film_id " +
+                    "LIMIT ?";
 
     public FilmDbStorage(JdbcTemplate jdbc, FilmRowMapper mapper) {
         super(jdbc, mapper);
@@ -167,6 +192,14 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         return films;
     }
 
+    @Override
+    public List<Film> getRecommendations(long userId, int limit) {
+        List<Film> films = findMany(FIND_RECOMMENDATIONS_QUERY, userId, userId, userId, limit);
+        loadGenres(films);
+        loadDirectors(films);
+        return films;
+    }
+
     private void saveGenres(Film film) {
         List<Integer> genreIds = film.getGenres().stream()
                 .map(Genre::getId)
@@ -237,5 +270,6 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                 film.getDirectors().add(new Director(rs.getLong("director_id"), rs.getString("name")));
             }
         }, filmIds.toArray());
+
     }
 }
