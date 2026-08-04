@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.controller;
 import java.util.Collection;
 import java.util.List;
 
+import org.springframework.web.bind.annotation.RequestParam;
 import ru.yandex.practicum.filmorate.model.Film;
 
 /**
@@ -77,4 +78,6 @@ public interface FilmController {
     List<Film> getByDirector(long directorId, String sortBy);
 
     List<Film> search(String query, String by);
+
+    List<Film> getCommonFilms(@RequestParam long userId, @RequestParam long friendId);
 }

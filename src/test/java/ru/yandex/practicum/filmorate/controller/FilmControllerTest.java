@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Slf4j
 @SpringBootTest
 @AutoConfigureMockMvc
 class FilmControllerTest {
@@ -269,5 +271,69 @@ class FilmControllerTest {
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].id").value(film2Id))
                 .andExpect(jsonPath("$[0].name").value("Фильм 2"));
+    }
+
+    @Test
+    @DisplayName("GET /films/common должен возвращать общие фильмы")
+    void shouldReturnCommonFilms() throws Exception {
+        long user1Id = createUser("user1@test.com", "user1", "user one");
+        long user2Id = createUser("user2@test.com", "user2", "user two");
+
+        Map<String, Object> film1Data = validFilm();
+        film1Data.put("name", "Общий фильм 1");
+        Map<String, Object> film2Data = validFilm();
+        film2Data.put("name", "Общий фильм 2");
+        Map<String, Object> film3Data = validFilm();
+        film3Data.put("name", "только user 1");
+
+        long film1Id = createFilm(film1Data);
+        long film2Id = createFilm(film2Data);
+        long film3Id = createFilm(film3Data);
+
+        addLike(film1Id, user1Id);
+        addLike(film2Id, user1Id);
+        addLike(film3Id, user1Id);
+
+        addLike(film1Id, user2Id);
+        addLike(film2Id, user2Id);
+
+        mockMvc.perform(get("/films/common")
+                        .param("userId", String.valueOf(user1Id))
+                        .param("friendId", String.valueOf(user2Id)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].id").value(film1Id))
+                .andExpect(jsonPath("$[1].id").value(film2Id));
+    }
+
+    @Test
+    @DisplayName("Общие филмьы должны сортироваться по популярности")
+    void shouldSortCommonFilmsByPopularity() throws Exception {
+        long user1Id = createUser("user1@test.com", "user1", "user one");
+        long user2Id = createUser("user2@test.com", "user2", "user two");
+        long user3Id = createUser("user3@test.com", "user3", "user three");
+
+        Map<String, Object> film1Data = validFilm();
+        film1Data.put("name", "Популярный фильм");
+        Map<String, Object> film2Data = validFilm();
+        film2Data.put("name", "Менее популярный");
+
+        long film1Id = createFilm(film1Data);
+        long film2Id = createFilm(film2Data);
+
+        addLike(film1Id, user1Id);
+        addLike(film1Id, user2Id);
+        addLike(film1Id, user3Id);
+
+        addLike(film2Id, user1Id);
+        addLike(film2Id, user2Id);
+
+        mockMvc.perform(get("/films/common")
+                        .param("userId", String.valueOf(user1Id))
+                        .param("friendId", String.valueOf(user2Id)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].id").value(film1Id))
+                .andExpect(jsonPath("$[1].id").value(film2Id));
     }
 }

@@ -122,4 +122,23 @@ public class InMemoryFilmStorage implements FilmStorage {
     public void removeLike(long filmId, long userId) {
         filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).remove(userId);
     }
+    @Override
+    public List<Film> getCommonFilms(long userId, long friendID) {
+        Set<Long> userLikes = getLikesByUser(userId);
+        Set<Long> friendLikes = getLikesByUser(friendID);
+
+        Set<Long> commonFilmIds = new HashSet<>(userLikes);
+        commonFilmIds.retainAll(friendLikes);
+
+        return commonFilmIds.stream()
+                .map(films::get)
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparingLong(
+                        film -> -getLikesCount(film.getId())
+                ))
+                .collect(Collectors.toList());
+    }
+    private long getLikesCount(long filmId) {
+        return filmLikes.getOrDefault(filmId, Collections.emptySet()).size();
+    }
 }
