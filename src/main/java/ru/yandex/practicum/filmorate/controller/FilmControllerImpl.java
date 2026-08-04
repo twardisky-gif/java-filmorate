@@ -68,6 +68,7 @@ public class FilmControllerImpl implements FilmController {
     public List<Film> getPopular(@RequestParam(defaultValue = "10") int count) {
         return filmService.getPopular(count);
     }
+
     @Override
     @GetMapping("/{userId}/recommendations")
     public List<Film> getRecommendations(@PathVariable long userId,
