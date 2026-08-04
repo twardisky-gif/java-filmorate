@@ -11,7 +11,7 @@ public interface FilmStorage {
 
     Film update(Film film);
 
-    void delete(long id);
+    boolean delete(long id);
 
     Optional<Film> getById(long id);
 
@@ -19,5 +19,7 @@ public interface FilmStorage {
 
     List<Film> getPopular(int count);
 
-    List<Film> getRecommendations(long userId, int limit);
+    List<Film> getByDirector(long directorId, String sortBy);
+
+    List<Film> search(String query, boolean byTitle, boolean byDirector);
 }

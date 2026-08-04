@@ -1,7 +1,13 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -26,8 +32,8 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public void delete(long id) {
-        films.remove(id);
+    public boolean delete(long id) {
+        return films.remove(id) != null;
     }
 
     @Override
@@ -49,55 +55,25 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public List<Film> getRecommendations(long userId, int limit) {
-        Map<Long, Long> userIntersection = new HashMap<>();
-        Set<Long> userLikes = getLikesByUser(userId);
-
-        for (Map.Entry<Long, Set<Long>> entry : filmLikes.entrySet()) {
-            for (Long otherUserId : entry.getValue()) {
-                if (otherUserId == userId) continue;
-                Set<Long> otherUserLikes = getLikesByUser(otherUserId);
-                long intersection = userLikes.stream()
-                        .filter(otherUserLikes::contains)
-                        .count();
-                if (intersection > 0) {
-                    userIntersection.merge(otherUserId, intersection, Long::sum);
-                }
-            }
-        }
-
-        Long similarUserId = userIntersection.entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .map(Map.Entry::getKey)
-                .orElse(null);
-
-        if (similarUserId == null) {
-            return List.of();
-        }
-
-        Set<Long> similarUserLikes = getLikesByUser(similarUserId);
-        Set<Long> userLikesSet = getLikesByUser(userId);
-
-        return similarUserLikes.stream()
-                .filter(filmId -> !userLikesSet.contains(filmId))
-                .map(films::get)
-                .filter(Objects::nonNull)
-                .limit(limit)
-                .collect(Collectors.toList());
+    public List<Film> getByDirector(long directorId, String sortBy) {
+        Comparator<Film> comparator = sortBy.equals("year")
+                ? Comparator.comparing(Film::getReleaseDate).thenComparingLong(Film::getId)
+                : Comparator.comparingLong(Film::getId);
+        return films.values().stream()
+                .filter(film -> film.getDirectors().stream()
+                        .anyMatch(director -> director.getId() == directorId))
+                .sorted(comparator)
+                .toList();
     }
 
-    private Set<Long> getLikesByUser(long userId) {
-        return filmLikes.entrySet().stream()
-                .filter(entry -> entry.getValue().contains(userId))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
-    }
-
-    public void addLike(long filmId, long userId) {
-        filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).add(userId);
-    }
-
-    public void removeLike(long filmId, long userId) {
-        filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).remove(userId);
+    @Override
+    public List<Film> search(String query, boolean byTitle, boolean byDirector) {
+        String normalizedQuery = query.toLowerCase(Locale.ROOT);
+        return films.values().stream()
+                .filter(film -> byTitle && film.getName().toLowerCase(Locale.ROOT).contains(normalizedQuery)
+                        || byDirector && film.getDirectors().stream()
+                        .anyMatch(director -> director.getName().toLowerCase(Locale.ROOT).contains(normalizedQuery)))
+                .sorted(Comparator.comparingLong(Film::getId))
+                .toList();
     }
 }
