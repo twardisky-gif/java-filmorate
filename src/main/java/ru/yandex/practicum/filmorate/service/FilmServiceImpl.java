@@ -1,5 +1,23 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.Director;
+import ru.yandex.practicum.filmorate.model.EventOperation;
+import ru.yandex.practicum.filmorate.model.EventType;
+import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.storage.director.DirectorStorage;
+import ru.yandex.practicum.filmorate.storage.event.EventStorage;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.like.LikeStorage;
+import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
+
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collection;
@@ -8,21 +26,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.Director;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.storage.director.DirectorStorage;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
-import ru.yandex.practicum.filmorate.storage.like.LikeStorage;
-import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 
 @Slf4j
 @Service
@@ -37,19 +40,22 @@ public class FilmServiceImpl implements FilmService {
     private final MpaStorage mpaStorage;
     private final DirectorStorage directorStorage;
     private final UserService userService;
+    private final EventStorage eventStorage;
 
     public FilmServiceImpl(@Qualifier("filmDbStorage") FilmStorage filmStorage,
                            LikeStorage likeStorage,
                            GenreStorage genreStorage,
                            MpaStorage mpaStorage,
                            DirectorStorage directorStorage,
-                           UserService userService) {
+                           UserService userService,
+                           EventStorage eventStorage) {
         this.filmStorage = filmStorage;
         this.likeStorage = likeStorage;
         this.genreStorage = genreStorage;
         this.mpaStorage = mpaStorage;
         this.directorStorage = directorStorage;
         this.userService = userService;
+        this.eventStorage = eventStorage;
     }
 
     @Override
@@ -98,6 +104,7 @@ public class FilmServiceImpl implements FilmService {
         getFilmOrThrow(filmId);
         userService.getById(userId);
         likeStorage.add(filmId, userId);
+        eventStorage.add(userId, EventType.LIKE, EventOperation.ADD, filmId);
         log.info("Пользователь {} поставил лайк фильму {}", userId, filmId);
     }
 
@@ -106,6 +113,7 @@ public class FilmServiceImpl implements FilmService {
         getFilmOrThrow(filmId);
         userService.getById(userId);
         likeStorage.remove(filmId, userId);
+        eventStorage.add(userId, EventType.LIKE, EventOperation.REMOVE, filmId);
         log.info("Пользователь {} удалил лайк фильму {}", userId, filmId);
     }
 

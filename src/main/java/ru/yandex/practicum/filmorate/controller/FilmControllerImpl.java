@@ -1,8 +1,5 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import java.util.Collection;
-import java.util.List;
-
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,6 +13,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
+
+import java.util.Collection;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -94,7 +94,7 @@ public class FilmControllerImpl implements FilmController {
     @Override
     @GetMapping("/common")
     public List<Film> getCommonFilms(@RequestParam long userId, @RequestParam long friendId) {
-        log.info("Запрошены общие фильмы для пользоьвателей {} и {}", userId, friendId);
+        log.info("��������� ����� ������ ��� �������������� {} � {}", userId, friendId);
         return filmService.getCommonFilms(userId, friendId);
     }
 }

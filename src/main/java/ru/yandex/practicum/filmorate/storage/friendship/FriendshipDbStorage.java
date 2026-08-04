@@ -1,12 +1,12 @@
 package ru.yandex.practicum.filmorate.storage.friendship;
 
-import java.util.List;
-
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.BaseRepository;
 import ru.yandex.practicum.filmorate.storage.mappers.UserRowMapper;
+
+import java.util.List;
 
 @Repository
 public class FriendshipDbStorage extends BaseRepository<User> implements FriendshipStorage {

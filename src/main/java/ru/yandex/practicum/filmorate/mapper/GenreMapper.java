@@ -1,9 +1,9 @@
 package ru.yandex.practicum.filmorate.mapper;
 
-import java.util.List;
-
 import ru.yandex.practicum.filmorate.dto.GenreDto;
 import ru.yandex.practicum.filmorate.model.Genre;
+
+import java.util.List;
 
 public final class GenreMapper {
 

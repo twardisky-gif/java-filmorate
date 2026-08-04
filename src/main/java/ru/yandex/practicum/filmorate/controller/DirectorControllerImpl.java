@@ -1,7 +1,5 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import java.util.List;
-
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +13,8 @@ import ru.yandex.practicum.filmorate.dto.DirectorDto;
 import ru.yandex.practicum.filmorate.mapper.DirectorMapper;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.service.DirectorService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/directors")

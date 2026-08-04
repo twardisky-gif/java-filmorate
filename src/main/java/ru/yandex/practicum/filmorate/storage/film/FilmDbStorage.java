@@ -1,5 +1,14 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.model.Director;
+import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.storage.BaseRepository;
+import ru.yandex.practicum.filmorate.storage.mappers.FilmRowMapper;
+
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,15 +18,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.model.Director;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.storage.BaseRepository;
-import ru.yandex.practicum.filmorate.storage.mappers.FilmRowMapper;
 
 @Repository
 @Qualifier("filmDbStorage")
@@ -176,31 +176,31 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
     @Override
     public List<Film> getPopular(int count, Integer genreId, Integer year) {
-        // Строим динамический запрос
+        // ������ ������������ ������
         StringBuilder queryBuilder = new StringBuilder(FIND_POPULAR_QUERY);
         List<Object> params = new ArrayList<>();
 
-        // Фильтр по году
+        // ������ �� ����
         if (year != null) {
             queryBuilder.append("AND YEAR(f.release_date) = ? ");
             params.add(year);
         }
 
-        // Фильтр по жанру
+        // ������ �� �����
         if (genreId != null) {
             queryBuilder.append("AND fg.genre_id = ? ");
             params.add(genreId);
         }
 
-        // Группировка и сортировка
+        // ����������� � ����������
         queryBuilder.append("GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name ")
                 .append("ORDER BY likes_count DESC, f.film_id ");
 
-        // Лимит
+        // �����
         queryBuilder.append("LIMIT ?");
         params.add(count);
 
-        // Выполняем запрос
+        // ��������� ������
         List<Film> films = findMany(queryBuilder.toString(), params.toArray());
         loadGenres(films);
         loadDirectors(films);
