@@ -189,4 +189,25 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].id").value(commonId));
     }
+
+    @Test
+    void shouldReturn404WhenDeletingUnknownUser() throws Exception {
+        // Пытаемся удалить несуществующий фильм
+        mockMvc.perform(delete("/users/" + UNKNOWN_ID))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldDeleteUserSuccessfully() throws Exception {
+        long userId = createUser();
+
+        mockMvc.perform(get("/users/" + userId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/users/" + userId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/users/" + userId))
+                .andExpect(status().isNotFound());
+    }
 }

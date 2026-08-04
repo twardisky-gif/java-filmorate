@@ -6,6 +6,9 @@ import ru.yandex.practicum.filmorate.model.Film;
 import java.util.Collection;
 import java.util.List;
 
+import org.springframework.web.bind.annotation.RequestParam;
+import ru.yandex.practicum.filmorate.model.Film;
+
 /**
  * Операции над фильмами и лайками.
  */

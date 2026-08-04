@@ -1,5 +1,13 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+
+
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 
@@ -148,7 +156,7 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .sorted((f1, f2) -> {
                     long likes1 = filmLikes.getOrDefault(f1.getId(), Collections.emptySet()).size();
                     long likes2 = filmLikes.getOrDefault(f2.getId(), Collections.emptySet()).size();
-                    return Long.compare(likes2, likes1); // �� ��������
+                    return Long.compare(likes2, likes1); // По убыванию
                 })
                 .collect(Collectors.toList());
     }
@@ -159,4 +167,5 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
     }
+}
 }
