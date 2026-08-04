@@ -122,6 +122,7 @@ public class InMemoryFilmStorage implements FilmStorage {
     public void removeLike(long filmId, long userId) {
         filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).remove(userId);
     }
+
     @Override
     public List<Film> getCommonFilms(long userId, long friendID) {
         Set<Long> userLikes = getLikesByUser(userId);
@@ -138,6 +139,7 @@ public class InMemoryFilmStorage implements FilmStorage {
                 ))
                 .collect(Collectors.toList());
     }
+
     private long getLikesCount(long filmId) {
         return filmLikes.getOrDefault(filmId, Collections.emptySet()).size();
     }
