@@ -70,37 +70,38 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                     + "WHERE fd.film_id IN (%s) "
                     + "ORDER BY fd.film_id, d.director_id";
     private static final String FIND_RECOMMENDATIONS_QUERY =
-            "WITH max_intersection AS (" +
-                    "    SELECT MAX(common_likes) as max_count FROM (" +
-                    "        SELECT COUNT(*) as common_likes " +
-                    "        FROM likes l1 " +
-                    "        JOIN likes l2 ON l1.film_id = l2.film_id " +
-                    "        WHERE l1.user_id = ? AND l2.user_id != ? " +
-                    "        GROUP BY l2.user_id" +
-                    "    )" +
-                    ")," +
-                    "similar_users AS (" +
-                    "    SELECT l2.user_id, COUNT(*) as common_likes " +
-                    "    FROM likes l1 " +
-                    "    JOIN likes l2 ON l1.film_id = l2.film_id " +
-                    "    WHERE l1.user_id = ? AND l2.user_id != ? " +
-                    "    GROUP BY l2.user_id " +
-                    "    HAVING COUNT(*) = (SELECT max_count FROM max_intersection)" +
-                    ")" +
-                    "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, " +
+            "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, " +
                     "       f.mpa_id, m.name AS mpa_name " +
                     "FROM films f " +
                     "JOIN mpa m ON m.mpa_id = f.mpa_id " +
                     "WHERE f.film_id IN (" +
                     "    SELECT DISTINCT l.film_id " +
                     "    FROM likes l " +
-                    "    WHERE l.user_id IN (SELECT user_id FROM similar_users) " +
+                    "    WHERE l.user_id IN (" +
+                    "        SELECT l2.user_id " +
+                    "        FROM likes l1 " +
+                    "        JOIN likes l2 ON l1.film_id = l2.film_id " +
+                    "        WHERE l1.user_id = ? " +
+                    "        AND l2.user_id != ? " +
+                    "        GROUP BY l2.user_id " +
+                    "        HAVING COUNT(*) = (" +
+                    "            SELECT MAX(cnt) FROM (" +
+                    "                SELECT COUNT(*) as cnt " +
+                    "                FROM likes l3 " +
+                    "                JOIN likes l4 ON l3.film_id = l4.film_id " +
+                    "                WHERE l3.user_id = ? " +
+                    "                AND l4.user_id != ? " +
+                    "                GROUP BY l4.user_id" +
+                    "            )" +
+                    "        )" +
+                    "    )" +
                     "    AND l.film_id NOT IN (" +
                     "        SELECT film_id FROM likes WHERE user_id = ?" +
                     "    )" +
                     ") " +
                     "ORDER BY f.film_id " +
                     "LIMIT ?";
+
 
     public FilmDbStorage(JdbcTemplate jdbc, FilmRowMapper mapper) {
         super(jdbc, mapper);

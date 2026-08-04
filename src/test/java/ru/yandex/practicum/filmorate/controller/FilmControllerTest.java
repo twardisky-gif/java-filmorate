@@ -237,16 +237,37 @@ class FilmControllerTest {
     @DisplayName("GET /users/{id}/recommendations должен возвращать рекомендации")
     void shouldReturnRecommendations() throws Exception {
         long user1Id = createUser("user1@test.com", "user1", "User One");
+        long user2Id = createUser("user2@test.com", "user2", "User Two");
 
         Map<String, Object> film1Data = validFilm();
         film1Data.put("name", "Фильм 1");
+        Map<String, Object> film2Data = validFilm();
+        film2Data.put("name", "Фильм 2");
+        Map<String, Object> film3Data = validFilm();
+        film3Data.put("name", "Фильм 3");
+
         long film1Id = createFilm(film1Data);
+        long film2Id = createFilm(film2Data);
+        long film3Id = createFilm(film3Data);
 
         addLike(film1Id, user1Id);
+        addLike(film2Id, user1Id);
+
+        addLike(film1Id, user2Id);
+        addLike(film3Id, user2Id);
 
         mockMvc.perform(get("/users/{id}/recommendations", user1Id)
                         .param("count", "5"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id").value(film3Id))
+                .andExpect(jsonPath("$[0].name").value("Фильм 3"));
+
+        mockMvc.perform(get("/users/{id}/recommendations", user2Id)
+                        .param("count", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id").value(film2Id))
+                .andExpect(jsonPath("$[0].name").value("Фильм 2"));
     }
 }
