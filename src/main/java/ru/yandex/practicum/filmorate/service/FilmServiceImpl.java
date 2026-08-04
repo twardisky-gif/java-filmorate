@@ -110,9 +110,9 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
-    public List<Film> getPopular(int count) {
+    public List<Film> getPopular(int count, Integer genreId, Integer year) {
         int limit = count > 0 ? count : DEFAULT_POPULAR_COUNT;
-        return filmStorage.getPopular(limit);
+        return filmStorage.getPopular(limit, genreId, year);
     }
 
     @Override
