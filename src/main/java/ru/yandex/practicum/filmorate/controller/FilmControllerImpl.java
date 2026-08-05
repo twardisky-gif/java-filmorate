@@ -94,7 +94,7 @@ public class FilmControllerImpl implements FilmController {
     @Override
     @GetMapping("/common")
     public List<Film> getCommonFilms(@RequestParam long userId, @RequestParam long friendId) {
-        log.info("��������� ����� ������ ��� �������������� {} � {}", userId, friendId);
+        log.info("Получены общие фильмы для пользователей {} и {}", userId, friendId);
         return filmService.getCommonFilms(userId, friendId);
     }
 }

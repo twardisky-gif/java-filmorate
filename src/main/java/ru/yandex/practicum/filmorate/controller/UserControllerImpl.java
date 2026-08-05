@@ -84,6 +84,7 @@ public class UserControllerImpl implements UserController {
         return userService.getCommonFriends(id, otherId);
     }
 
+    @Override
     @GetMapping("/{id}/recommendations")
     public List<Film> getRecommendations(@PathVariable long id,
                                          @RequestParam(defaultValue = "10") int count) {

@@ -137,6 +137,14 @@ class UserControllerTest {
     }
 
     @Test
+    void shouldFailWhenBirthdayIsMissing() throws Exception {
+        Map<String, Object> user = userWithLogin(uniqueLogin());
+        user.remove("birthday");
+
+        expectBadRequest(user);
+    }
+
+    @Test
     void shouldUseLoginAsNameWhenNameIsEmpty() throws Exception {
         String login = uniqueLogin();
         Map<String, Object> user = userWithLogin(login);
@@ -279,6 +287,33 @@ class UserControllerTest {
                 .andExpect(jsonPath("$[1].eventType").value("FRIEND"))
                 .andExpect(jsonPath("$[1].operation").value("REMOVE"))
                 .andExpect(jsonPath("$[1].entityId").value(friendId));
+    }
+
+    @Test
+    void shouldNotCreateEventsForDuplicateFriendOperations() throws Exception {
+        long userId = createUser();
+        long friendId = createUser();
+
+        mockMvc.perform(put("/users/" + userId + "/friends/" + friendId))
+                .andExpect(status().isOk());
+        mockMvc.perform(put("/users/" + userId + "/friends/" + friendId))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/users/" + userId + "/friends/" + friendId))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/users/" + userId + "/friends/" + friendId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/users/" + userId + "/feed"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].eventType").value("FRIEND"))
+                .andExpect(jsonPath("$[0].operation").value("ADD"))
+                .andExpect(jsonPath("$[0].entityId").value(friendId))
+                .andExpect(jsonPath("$[0].userId").value(userId))
+                .andExpect(jsonPath("$[1].eventType").value("FRIEND"))
+                .andExpect(jsonPath("$[1].operation").value("REMOVE"))
+                .andExpect(jsonPath("$[1].entityId").value(friendId))
+                .andExpect(jsonPath("$[1].userId").value(userId));
     }
 
     @Test

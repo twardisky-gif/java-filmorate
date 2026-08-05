@@ -6,7 +6,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class LikeDbStorage implements LikeStorage {
     private static final String ADD_QUERY =
-            "MERGE INTO likes (film_id, user_id) KEY (film_id, user_id) VALUES (?, ?)";
+            "INSERT INTO likes (film_id, user_id) "
+                    + "SELECT ?, ? WHERE NOT EXISTS ("
+                    + "SELECT 1 FROM likes WHERE film_id = ? AND user_id = ?)";
     private static final String REMOVE_QUERY =
             "DELETE FROM likes WHERE film_id = ? AND user_id = ?";
 
@@ -17,12 +19,12 @@ public class LikeDbStorage implements LikeStorage {
     }
 
     @Override
-    public void add(long filmId, long userId) {
-        jdbc.update(ADD_QUERY, filmId, userId);
+    public boolean add(long filmId, long userId) {
+        return jdbc.update(ADD_QUERY, filmId, userId, filmId, userId) > 0;
     }
 
     @Override
-    public void remove(long filmId, long userId) {
-        jdbc.update(REMOVE_QUERY, filmId, userId);
+    public boolean remove(long filmId, long userId) {
+        return jdbc.update(REMOVE_QUERY, filmId, userId) > 0;
     }
 }
