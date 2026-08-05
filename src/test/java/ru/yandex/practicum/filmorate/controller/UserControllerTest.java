@@ -60,6 +60,39 @@ class UserControllerTest {
         return objectMapper.readTree(response).get("id").asLong();
     }
 
+    private long createFilm() throws Exception {
+        Map<String, Object> film = new LinkedHashMap<>();
+        film.put("name", "Фильм для ленты");
+        film.put("description", "Описание");
+        film.put("releaseDate", "2000-01-01");
+        film.put("duration", 120);
+        film.put("mpa", Map.of("id", 1));
+        String response = mockMvc.perform(post("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJson(film)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        return objectMapper.readTree(response).get("id").asLong();
+    }
+
+    private long createReview(long userId, long filmId) throws Exception {
+        Map<String, Object> review = new LinkedHashMap<>();
+        review.put("content", "Отличный фильм");
+        review.put("isPositive", true);
+        review.put("userId", userId);
+        review.put("filmId", filmId);
+        String response = mockMvc.perform(post("/reviews")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJson(review)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        return objectMapper.readTree(response).get("reviewId").asLong();
+    }
+
     private void expectBadRequest(Map<String, Object> user) throws Exception {
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -209,5 +242,99 @@ class UserControllerTest {
 
         mockMvc.perform(get("/users/" + userId))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturnEmptyFeedForUserWithoutEvents() throws Exception {
+        long userId = createUser();
+
+        mockMvc.perform(get("/users/" + userId + "/feed"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void shouldReturn404ForFeedOfUnknownUser() throws Exception {
+        mockMvc.perform(get("/users/" + UNKNOWN_ID + "/feed"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturnFriendEventsInFeed() throws Exception {
+        long userId = createUser();
+        long friendId = createUser();
+
+        mockMvc.perform(put("/users/" + userId + "/friends/" + friendId))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/users/" + userId + "/friends/" + friendId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/users/" + userId + "/feed"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].eventType").value("FRIEND"))
+                .andExpect(jsonPath("$[0].operation").value("ADD"))
+                .andExpect(jsonPath("$[0].entityId").value(friendId))
+                .andExpect(jsonPath("$[0].userId").value(userId))
+                .andExpect(jsonPath("$[1].eventType").value("FRIEND"))
+                .andExpect(jsonPath("$[1].operation").value("REMOVE"))
+                .andExpect(jsonPath("$[1].entityId").value(friendId));
+    }
+
+    @Test
+    void shouldReturnLikeEventsInFeed() throws Exception {
+        long userId = createUser();
+        long filmId = createFilm();
+
+        mockMvc.perform(put("/films/" + filmId + "/like/" + userId))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/films/" + filmId + "/like/" + userId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/users/" + userId + "/feed"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].eventType").value("LIKE"))
+                .andExpect(jsonPath("$[0].operation").value("ADD"))
+                .andExpect(jsonPath("$[0].entityId").value(filmId))
+                .andExpect(jsonPath("$[0].userId").value(userId))
+                .andExpect(jsonPath("$[1].eventType").value("LIKE"))
+                .andExpect(jsonPath("$[1].operation").value("REMOVE"))
+                .andExpect(jsonPath("$[1].entityId").value(filmId));
+    }
+
+    @Test
+    void shouldReturnReviewEventsInFeed() throws Exception {
+        long userId = createUser();
+        long filmId = createFilm();
+        long reviewId = createReview(userId, filmId);
+
+        Map<String, Object> update = new LinkedHashMap<>();
+        update.put("reviewId", reviewId);
+        update.put("content", "Обновлённый отзыв");
+        update.put("isPositive", false);
+        update.put("userId", userId);
+        update.put("filmId", filmId);
+
+        mockMvc.perform(put("/reviews")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJson(update)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/reviews/" + reviewId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/users/" + userId + "/feed"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[0].eventType").value("REVIEW"))
+                .andExpect(jsonPath("$[0].operation").value("ADD"))
+                .andExpect(jsonPath("$[0].entityId").value(reviewId))
+                .andExpect(jsonPath("$[1].eventType").value("REVIEW"))
+                .andExpect(jsonPath("$[1].operation").value("UPDATE"))
+                .andExpect(jsonPath("$[1].entityId").value(reviewId))
+                .andExpect(jsonPath("$[2].eventType").value("REVIEW"))
+                .andExpect(jsonPath("$[2].operation").value("REMOVE"))
+                .andExpect(jsonPath("$[2].entityId").value(reviewId));
     }
 }

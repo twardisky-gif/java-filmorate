@@ -1,9 +1,10 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import ru.yandex.practicum.filmorate.model.Event;
+import ru.yandex.practicum.filmorate.model.User;
+
 import java.util.Collection;
 import java.util.List;
-
-import ru.yandex.practicum.filmorate.model.User;
 
 /**
  * Операции над пользователями и их друзьями.
@@ -82,4 +83,13 @@ public interface UserController {
      * @return список общих друзей
      */
     List<User> getCommonFriends(long id, long otherId);
+
+    /**
+     * Возвращает ленту событий пользователя.
+     *
+     * @param id идентификатор пользователя
+     * @return список событий, отсортированный по времени
+     * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если пользователь не найден
+     */
+    List<Event> getFeed(long id);
 }

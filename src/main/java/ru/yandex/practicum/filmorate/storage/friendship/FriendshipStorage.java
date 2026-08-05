@@ -1,8 +1,8 @@
 package ru.yandex.practicum.filmorate.storage.friendship;
 
-import java.util.List;
-
 import ru.yandex.practicum.filmorate.model.User;
+
+import java.util.List;
 
 public interface FriendshipStorage {
     void add(long userId, long friendId);

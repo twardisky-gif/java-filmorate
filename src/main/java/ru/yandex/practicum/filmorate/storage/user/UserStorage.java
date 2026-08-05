@@ -1,9 +1,9 @@
 package ru.yandex.practicum.filmorate.storage.user;
 
+import ru.yandex.practicum.filmorate.model.User;
+
 import java.util.Collection;
 import java.util.Optional;
-
-import ru.yandex.practicum.filmorate.model.User;
 
 public interface UserStorage {
     User add(User user);

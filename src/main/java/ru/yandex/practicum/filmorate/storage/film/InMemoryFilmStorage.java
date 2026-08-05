@@ -1,21 +1,27 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-
-
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class InMemoryFilmStorage implements FilmStorage {
     private final Map<Long, Film> films = new HashMap<>();
-    private long nextId = 1;
     private final Map<Long, Set<Long>> filmLikes = new HashMap<>();
+    private long nextId = 1;
 
     @Override
     public Film add(Film film) {
@@ -48,10 +54,10 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public List<Film> getPopular(int count, Integer genreId, Integer year) {
         return films.values().stream()
-                // Если genreId == null — не фильтруем по жанру
+                // ���� genreId == null � �� ��������� �� �����
                 .filter(film -> genreId == null ||
                         film.getGenres().stream().anyMatch(g -> g.getId() == genreId))
-                // Если year == null — не фильтруем по году
+                // ���� year == null � �� ��������� �� ����
                 .filter(film -> year == null ||
                         film.getReleaseDate().getYear() == year)
                 .sorted(Comparator.comparingLong(Film::getId))
@@ -142,7 +148,7 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .sorted((f1, f2) -> {
                     long likes1 = filmLikes.getOrDefault(f1.getId(), Collections.emptySet()).size();
                     long likes2 = filmLikes.getOrDefault(f2.getId(), Collections.emptySet()).size();
-                    return Long.compare(likes2, likes1); // По убыванию
+                    return Long.compare(likes2, likes1); // �� ��������
                 })
                 .collect(Collectors.toList());
     }

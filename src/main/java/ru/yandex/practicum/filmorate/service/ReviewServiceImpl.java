@@ -4,7 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.EventOperation;
+import ru.yandex.practicum.filmorate.model.EventType;
 import ru.yandex.practicum.filmorate.model.Review;
+import ru.yandex.practicum.filmorate.storage.event.EventStorage;
 import ru.yandex.practicum.filmorate.storage.review.ReviewReactionStorage;
 import ru.yandex.practicum.filmorate.storage.review.ReviewStorage;
 
@@ -19,15 +22,18 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewReactionStorage reviewReactionStorage;
     private final UserService userService;
     private final FilmService filmService;
+    private final EventStorage eventStorage;
 
     public ReviewServiceImpl(ReviewStorage reviewStorage,
                              ReviewReactionStorage reviewReactionStorage,
                              UserService userService,
-                             FilmService filmService) {
+                             FilmService filmService,
+                             EventStorage eventStorage) {
         this.reviewStorage = reviewStorage;
         this.reviewReactionStorage = reviewReactionStorage;
         this.userService = userService;
         this.filmService = filmService;
+        this.eventStorage = eventStorage;
     }
 
     @Override
@@ -40,6 +46,7 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         Review created = reviewStorage.add(review);
+        eventStorage.add(created.getUserId(), EventType.REVIEW, EventOperation.ADD, created.getReviewId());
 
         log.info("Добавлен отзыв с id={} пользователя {} на фильм {}",
                 created.getReviewId(), created.getUserId(), created.getFilmId());
@@ -53,6 +60,7 @@ public class ReviewServiceImpl implements ReviewService {
         existing.setIsPositive(review.getIsPositive());
 
         reviewStorage.update(existing);
+        eventStorage.add(existing.getUserId(), EventType.REVIEW, EventOperation.UPDATE, existing.getReviewId());
 
         log.info("Обновлен отзыв с id={}", existing.getReviewId());
         return getById(existing.getReviewId());
@@ -60,8 +68,10 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public void delete(long id) {
-        getReviewOrThrow(id);
+        Review existing = getReviewOrThrow(id);
         reviewStorage.delete(id);
+        eventStorage.add(existing.getUserId(), EventType.REVIEW, EventOperation.REMOVE, id);
+
         log.info("Удален отзыв с id={}", id);
     }
 

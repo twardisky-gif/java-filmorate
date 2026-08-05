@@ -12,6 +12,11 @@ erDiagram
     films ||--o{ likes : "получает"
     users ||--o{ likes : "ставит"
     users ||--o{ friendships : "добавляет"
+    users ||--o{ reviews : "пишет"
+    films ||--o{ reviews : "имеет"
+    reviews ||--o{ review_reactions : "получает"
+    users ||--o{ review_reactions : "ставит"
+    users ||--o{ events : "produces"
 
     mpa {
         integer mpa_id PK
@@ -49,6 +54,26 @@ erDiagram
         bigint friend_id PK_FK
         boolean status
     }
+    reviews {
+        bigint review_id PK
+        varchar content
+        boolean is_positive
+        bigint user_id FK
+        bigint film_id FK
+    }
+    review_reactions {
+        bigint review_id PK_FK
+        bigint user_id PK_FK
+        boolean is_like
+    }
+    events {
+        bigint event_id PK
+        bigint user_id FK
+        varchar event_type
+        varchar operation
+        bigint entity_id
+        bigint event_timestamp
+    }
 ```
 
 Пояснения к схеме:
@@ -56,6 +81,12 @@ erDiagram
 - `mpa` и `genres` это справочники. Рейтинг у фильма один, жанров может быть несколько.
 - `film_genres` и `likes` связывают таблицы многие ко многим. Составной первичный ключ не даёт продублировать жанр у фильма и второй лайк от того же пользователя.
 - `friendships` хранит одностороннюю дружбу: строка означает, что `user_id` добавил `friend_id` к себе в друзья. Поле `status` отражает подтверждение заявки.
+- `reviews` — один отзыв на пару `(user_id, film_id)` (ограничение `uq_reviews_user_film`). `review_reactions` хранит лайк или дизлайк отзыва (`is_like`); полезность отзыва считается как лайки минус дизлайки и в таблице не хранится.
+- `events` — лента действий пользователя (лайки, дружба, отзывы): тип (`LIKE`, `FRIEND`, `REVIEW`), операция (`ADD`, `UPDATE`, `REMOVE`), идентификатор сущности и метка времени.
+
+## API пользователей
+
+- `GET /users/{id}/feed` — лента событий пользователя
 
 ## Примеры запросов
 

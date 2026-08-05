@@ -1,26 +1,33 @@
 package ru.yandex.practicum.filmorate.service;
 
-import java.util.Collection;
-import java.util.List;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Event;
+import ru.yandex.practicum.filmorate.model.EventOperation;
+import ru.yandex.practicum.filmorate.model.EventType;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.event.EventStorage;
 import ru.yandex.practicum.filmorate.storage.friendship.FriendshipStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+
+import java.util.Collection;
+import java.util.List;
 
 @Slf4j
 @Service
 public class UserServiceImpl implements UserService {
     private final UserStorage userStorage;
     private final FriendshipStorage friendshipStorage;
+    private final EventStorage eventStorage;
 
     public UserServiceImpl(@Qualifier("userDbStorage") UserStorage userStorage,
-                           FriendshipStorage friendshipStorage) {
+                           FriendshipStorage friendshipStorage,
+                           EventStorage eventStorage) {
         this.userStorage = userStorage;
         this.friendshipStorage = friendshipStorage;
+        this.eventStorage = eventStorage;
     }
 
     @Override
@@ -63,6 +70,7 @@ public class UserServiceImpl implements UserService {
         getUserOrThrow(userId);
         getUserOrThrow(friendId);
         friendshipStorage.add(userId, friendId);
+        eventStorage.add(userId, EventType.FRIEND, EventOperation.ADD, friendId);
         log.info("Пользователь {} добавил в друзья пользователя {}", userId, friendId);
     }
 
@@ -71,6 +79,7 @@ public class UserServiceImpl implements UserService {
         getUserOrThrow(userId);
         getUserOrThrow(friendId);
         friendshipStorage.remove(userId, friendId);
+        eventStorage.add(userId, EventType.FRIEND, EventOperation.REMOVE, friendId);
         log.info("Пользователь {} удалил из друзей пользователя {}", userId, friendId);
     }
 
@@ -85,6 +94,12 @@ public class UserServiceImpl implements UserService {
         getUserOrThrow(userId);
         getUserOrThrow(otherId);
         return friendshipStorage.getCommonFriends(userId, otherId);
+    }
+
+    @Override
+    public List<Event> getFeed(long userId) {
+        getUserOrThrow(userId);
+        return eventStorage.findByUserId(userId);
     }
 
     private void applyNameIfEmpty(User user) {

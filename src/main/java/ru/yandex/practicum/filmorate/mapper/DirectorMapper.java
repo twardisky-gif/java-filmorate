@@ -1,10 +1,10 @@
 package ru.yandex.practicum.filmorate.mapper;
 
-import java.util.Collection;
-import java.util.List;
-
 import ru.yandex.practicum.filmorate.dto.DirectorDto;
 import ru.yandex.practicum.filmorate.model.Director;
+
+import java.util.Collection;
+import java.util.List;
 
 public final class DirectorMapper {
 
