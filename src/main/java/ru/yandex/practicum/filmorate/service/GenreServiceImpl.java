@@ -1,11 +1,11 @@
 package ru.yandex.practicum.filmorate.service;
 
-import java.util.List;
-
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
+
+import java.util.List;
 
 @Service
 public class GenreServiceImpl implements GenreService {

@@ -1,9 +1,11 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import ru.yandex.practicum.filmorate.dto.EventDto;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.dto.UserDto;
+
 import java.util.Collection;
 import java.util.List;
-
-import ru.yandex.practicum.filmorate.model.User;
 
 /**
  * Операции над пользователями и их друзьями.
@@ -15,7 +17,7 @@ public interface UserController {
      *
      * @return коллекция пользователей
      */
-    Collection<User> getAll();
+    Collection<UserDto> getAll();
 
     /**
      * Возвращает пользователя по идентификатору.
@@ -24,7 +26,7 @@ public interface UserController {
      * @return найденный пользователь
      * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если пользователь не найден
      */
-    User getById(long id);
+    UserDto getById(long id);
 
     /**
      * Создаёт нового пользователя.
@@ -32,7 +34,7 @@ public interface UserController {
      * @param user данные пользователя
      * @return сохранённый пользователь с присвоенным идентификатором
      */
-    User create(User user);
+    UserDto create(UserDto user);
 
     /**
      * Обновляет существующего пользователя.
@@ -41,12 +43,19 @@ public interface UserController {
      * @return обновлённый пользователь
      * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если пользователь не найден
      */
-    User update(User user);
+    UserDto update(UserDto user);
+
+    /**
+     * Удаляет пользователя.
+     *
+     * @param id идентификатор пользователя
+     */
+    void removeUser(long id);
 
     /**
      * Добавляет пользователя в друзья. Дружба односторонняя.
      *
-     * @param id идентификатор пользователя
+     * @param id       идентификатор пользователя
      * @param friendId идентификатор добавляемого друга
      */
     void addFriend(long id, long friendId);
@@ -54,7 +63,7 @@ public interface UserController {
     /**
      * Удаляет пользователя из друзей.
      *
-     * @param id идентификатор пользователя
+     * @param id       идентификатор пользователя
      * @param friendId идентификатор удаляемого друга
      */
     void removeFriend(long id, long friendId);
@@ -65,14 +74,33 @@ public interface UserController {
      * @param id идентификатор пользователя
      * @return список друзей
      */
-    List<User> getFriends(long id);
+    List<UserDto> getFriends(long id);
 
     /**
      * Возвращает общих друзей двух пользователей.
      *
-     * @param id идентификатор первого пользователя
+     * @param id      идентификатор первого пользователя
      * @param otherId идентификатор второго пользователя
      * @return список общих друзей
      */
-    List<User> getCommonFriends(long id, long otherId);
+    List<UserDto> getCommonFriends(long id, long otherId);
+
+    /**
+     * Возвращает рекомендации фильмов для пользователя.
+     *
+     * @param id    идентификатор пользователя
+     * @param count максимальное количество рекомендаций
+     * @return список рекомендованных фильмов
+     * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если пользователь не найден
+     */
+    List<FilmDto> getRecommendations(long id, int count);
+
+    /**
+     * Возвращает ленту событий пользователя.
+     *
+     * @param id идентификатор пользователя
+     * @return список событий, отсортированный по времени
+     * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если пользователь не найден
+     */
+    List<EventDto> getFeed(long id);
 }

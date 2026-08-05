@@ -1,8 +1,8 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import java.util.List;
-
 import ru.yandex.practicum.filmorate.dto.GenreDto;
+
+import java.util.List;
 
 /**
  * Операции над справочником жанров фильмов.

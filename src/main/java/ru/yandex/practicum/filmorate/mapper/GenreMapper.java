@@ -1,9 +1,9 @@
 package ru.yandex.practicum.filmorate.mapper;
 
-import java.util.List;
-
 import ru.yandex.practicum.filmorate.dto.GenreDto;
 import ru.yandex.practicum.filmorate.model.Genre;
+
+import java.util.List;
 
 public final class GenreMapper {
 
@@ -12,6 +12,10 @@ public final class GenreMapper {
 
     public static GenreDto toDto(Genre genre) {
         return new GenreDto(genre.getId(), genre.getName());
+    }
+
+    public static Genre toModel(GenreDto genre) {
+        return new Genre(genre.id(), genre.name());
     }
 
     public static List<GenreDto> toDto(List<Genre> genres) {

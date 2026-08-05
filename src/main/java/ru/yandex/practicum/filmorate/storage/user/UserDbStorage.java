@@ -1,15 +1,15 @@
 package ru.yandex.practicum.filmorate.storage.user;
 
-import java.sql.Date;
-import java.util.Collection;
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.BaseRepository;
 import ru.yandex.practicum.filmorate.storage.mappers.UserRowMapper;
+
+import java.sql.Date;
+import java.util.Collection;
+import java.util.Optional;
 
 @Repository
 @Qualifier("userDbStorage")
@@ -52,8 +52,8 @@ public class UserDbStorage extends BaseRepository<User> implements UserStorage {
     }
 
     @Override
-    public void delete(long id) {
-        delete(DELETE_QUERY, id);
+    public boolean delete(long id) {
+        return delete(DELETE_QUERY, id);
     }
 
     @Override

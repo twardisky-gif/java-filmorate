@@ -1,17 +1,19 @@
 package ru.yandex.practicum.filmorate.storage.friendship;
 
-import java.util.List;
-
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.BaseRepository;
 import ru.yandex.practicum.filmorate.storage.mappers.UserRowMapper;
 
+import java.util.List;
+
 @Repository
 public class FriendshipDbStorage extends BaseRepository<User> implements FriendshipStorage {
     private static final String ADD_QUERY =
-            "MERGE INTO friendships (user_id, friend_id, status) KEY (user_id, friend_id) VALUES (?, ?, FALSE)";
+            "INSERT INTO friendships (user_id, friend_id, status) "
+                    + "SELECT ?, ?, FALSE WHERE NOT EXISTS ("
+                    + "SELECT 1 FROM friendships WHERE user_id = ? AND friend_id = ?)";
     private static final String REMOVE_QUERY =
             "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?";
     private static final String FIND_FRIENDS_QUERY =
@@ -33,13 +35,13 @@ public class FriendshipDbStorage extends BaseRepository<User> implements Friends
     }
 
     @Override
-    public void add(long userId, long friendId) {
-        jdbc.update(ADD_QUERY, userId, friendId);
+    public boolean add(long userId, long friendId) {
+        return jdbc.update(ADD_QUERY, userId, friendId, userId, friendId) > 0;
     }
 
     @Override
-    public void remove(long userId, long friendId) {
-        delete(REMOVE_QUERY, userId, friendId);
+    public boolean remove(long userId, long friendId) {
+        return delete(REMOVE_QUERY, userId, friendId);
     }
 
     @Override
