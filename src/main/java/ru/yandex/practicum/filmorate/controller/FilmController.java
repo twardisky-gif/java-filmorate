@@ -1,6 +1,6 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
 
 import java.util.Collection;
 import java.util.List;
@@ -15,7 +15,7 @@ public interface FilmController {
      *
      * @return коллекция фильмов
      */
-    Collection<Film> getAll();
+    Collection<FilmDto> getAll();
 
     /**
      * Возвращает фильм по идентификатору.
@@ -24,7 +24,7 @@ public interface FilmController {
      * @return найденный фильм
      * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если фильм не найден
      */
-    Film getById(long id);
+    FilmDto getById(long id);
 
     /**
      * Добавляет новый фильм.
@@ -32,7 +32,7 @@ public interface FilmController {
      * @param film данные фильма
      * @return сохранённый фильм с присвоенным идентификатором
      */
-    Film create(Film film);
+    FilmDto create(FilmDto film);
 
     /**
      * Обновляет существующий фильм.
@@ -41,7 +41,7 @@ public interface FilmController {
      * @return обновлённый фильм
      * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если фильм не найден
      */
-    Film update(Film film);
+    FilmDto update(FilmDto film);
 
     /**
      * Ставит лайк фильму от имени пользователя.
@@ -74,7 +74,7 @@ public interface FilmController {
      * @param year    год фильма по которому хотим фильтровать
      * @return список фильмов по убыванию популярности
      */
-    List<Film> getPopular(int count, Integer genreId, Integer year);
+    List<FilmDto> getPopular(int count, Integer genreId, Integer year);
 
     /**
      * Возвращает фильмы режиссёра с указанной сортировкой.
@@ -85,7 +85,7 @@ public interface FilmController {
      * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если режиссёр не найден
      * @throws ru.yandex.practicum.filmorate.exception.ValidationException если тип сортировки не поддерживается
      */
-    List<Film> getByDirector(long directorId, String sortBy);
+    List<FilmDto> getByDirector(long directorId, String sortBy);
 
     /**
      * Ищет фильмы по названию, режиссёру или обоим полям.
@@ -95,7 +95,7 @@ public interface FilmController {
      * @return список найденных фильмов по убыванию популярности
      * @throws ru.yandex.practicum.filmorate.exception.ValidationException если указано неподдерживаемое поле поиска
      */
-    List<Film> search(String query, String by);
+    List<FilmDto> search(String query, String by);
 
     /**
      * Возвращает общие фильмы двух пользователей по убыванию популярности.
@@ -105,5 +105,5 @@ public interface FilmController {
      * @return список общих фильмов
      * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если один из пользователей не найден
      */
-    List<Film> getCommonFilms(long userId, long friendId);
+    List<FilmDto> getCommonFilms(long userId, long friendId);
 }

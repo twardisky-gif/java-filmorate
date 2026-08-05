@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import ru.yandex.practicum.filmorate.dto.DirectorDto;
-import ru.yandex.practicum.filmorate.model.Director;
 
 import java.util.List;
 
@@ -32,7 +31,7 @@ public interface DirectorController {
      * @param director данные режиссёра
      * @return созданный режиссёр
      */
-    DirectorDto create(Director director);
+    DirectorDto create(DirectorDto director);
 
     /**
      * Обновляет существующего режиссёра.
@@ -41,7 +40,7 @@ public interface DirectorController {
      * @return обновлённый режиссёр
      * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если режиссёр не найден
      */
-    DirectorDto update(Director director);
+    DirectorDto update(DirectorDto director);
 
     /**
      * Удаляет режиссёра.

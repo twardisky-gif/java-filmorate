@@ -308,13 +308,21 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         }
         List<Object> filmIds = new ArrayList<>(filmsById.keySet());
         String placeholders = String.join(",", Collections.nCopies(filmIds.size(), "?"));
-        jdbc.query(FIND_DIRECTORS_BY_FILM_IDS_QUERY.formatted(placeholders), rs -> {
-            Film film = filmsById.get(rs.getLong("film_id"));
+        List<FilmDirector> filmDirectors = jdbc.query(
+                FIND_DIRECTORS_BY_FILM_IDS_QUERY.formatted(placeholders),
+                (rs, rowNum) -> new FilmDirector(
+                        rs.getLong("film_id"),
+                        new Director(rs.getLong("director_id"), rs.getString("name"))),
+                filmIds.toArray());
+        for (FilmDirector filmDirector : filmDirectors) {
+            Film film = filmsById.get(filmDirector.filmId());
             if (film != null) {
-                film.getDirectors().add(new Director(rs.getLong("director_id"), rs.getString("name")));
+                film.getDirectors().add(filmDirector.director());
             }
-        }, filmIds.toArray());
+        }
+    }
 
+    private record FilmDirector(long filmId, Director director) {
     }
 
     @Override

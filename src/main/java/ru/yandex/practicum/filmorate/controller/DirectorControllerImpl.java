@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.dto.DirectorDto;
 import ru.yandex.practicum.filmorate.mapper.DirectorMapper;
-import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.service.DirectorService;
 
 import java.util.List;
@@ -39,14 +38,14 @@ public class DirectorControllerImpl implements DirectorController {
 
     @Override
     @PostMapping
-    public DirectorDto create(@Valid @RequestBody Director director) {
-        return DirectorMapper.toDto(directorService.create(director));
+    public DirectorDto create(@Valid @RequestBody DirectorDto director) {
+        return DirectorMapper.toDto(directorService.create(DirectorMapper.toModel(director)));
     }
 
     @Override
     @PutMapping
-    public DirectorDto update(@Valid @RequestBody Director director) {
-        return DirectorMapper.toDto(directorService.update(director));
+    public DirectorDto update(@Valid @RequestBody DirectorDto director) {
+        return DirectorMapper.toDto(directorService.update(DirectorMapper.toModel(director)));
     }
 
     @Override

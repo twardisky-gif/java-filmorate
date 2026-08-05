@@ -14,6 +14,10 @@ public final class GenreMapper {
         return new GenreDto(genre.getId(), genre.getName());
     }
 
+    public static Genre toModel(GenreDto genre) {
+        return new Genre(genre.id(), genre.name());
+    }
+
     public static List<GenreDto> toDto(List<Genre> genres) {
         return genres.stream()
                 .map(GenreMapper::toDto)

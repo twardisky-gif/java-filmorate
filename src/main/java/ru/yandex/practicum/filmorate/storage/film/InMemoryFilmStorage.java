@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 public class InMemoryFilmStorage implements FilmStorage {
     private final Map<Long, Film> films = new HashMap<>();
     private final Map<Long, Set<Long>> filmLikes = new HashMap<>();
+    private final Map<Long, Set<Long>> userLikes = new HashMap<>();
     private long nextId = 1;
 
     @Override
@@ -38,6 +39,10 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     @Override
     public boolean delete(long id) {
+        Set<Long> users = filmLikes.remove(id);
+        if (users != null) {
+            users.forEach(userId -> removeUserLike(userId, id));
+        }
         return films.remove(id) != null;
     }
 
@@ -65,24 +70,13 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     @Override
     public List<Film> getRecommendations(long userId, int limit) {
-        Set<Long> userLikes = getLikesByUser(userId);
-
-        Map<Long, Long> similarity = new HashMap<>();
-        for (Map.Entry<Long, Set<Long>> entry : filmLikes.entrySet()) {
-            for (Long otherUserId : entry.getValue()) {
-                if (otherUserId == userId) continue;
-                Set<Long> otherLikes = getLikesByUser(otherUserId);
-                long intersection = userLikes.stream()
-                        .filter(otherLikes::contains)
-                        .count();
-                if (intersection > 0) {
-                    similarity.merge(otherUserId, intersection, Long::sum);
-                }
-            }
-        }
-
-        Long similarUserId = similarity.entrySet().stream()
-                .max(Map.Entry.comparingByValue())
+        Set<Long> likedFilms = getLikesByUser(userId);
+        Long similarUserId = userLikes.entrySet().stream()
+                .filter(entry -> entry.getKey() != userId)
+                .map(entry -> Map.entry(entry.getKey(), countCommonFilms(likedFilms, entry.getValue())))
+                .filter(entry -> entry.getValue() > 0)
+                .max(Comparator.comparingLong((Map.Entry<Long, Long> entry) -> entry.getValue())
+                        .thenComparingLong(entry -> -entry.getKey()))
                 .map(Map.Entry::getKey)
                 .orElse(null);
 
@@ -93,7 +87,7 @@ public class InMemoryFilmStorage implements FilmStorage {
         Set<Long> similarLikes = getLikesByUser(similarUserId);
 
         return similarLikes.stream()
-                .filter(filmId -> !userLikes.contains(filmId))
+                .filter(filmId -> !likedFilms.contains(filmId))
                 .map(films::get)
                 .filter(Objects::nonNull)
                 .limit(limit)
@@ -126,10 +120,15 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     public void addLike(long filmId, long userId) {
         filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).add(userId);
+        userLikes.computeIfAbsent(userId, k -> new HashSet<>()).add(filmId);
     }
 
     public void removeLike(long filmId, long userId) {
-        filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).remove(userId);
+        Set<Long> users = filmLikes.get(filmId);
+        if (users != null) {
+            users.remove(userId);
+        }
+        removeUserLike(userId, filmId);
     }
 
     @Override
@@ -152,9 +151,22 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     private Set<Long> getLikesByUser(long userId) {
-        return filmLikes.entrySet().stream()
-                .filter(entry -> entry.getValue().contains(userId))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
+        return userLikes.getOrDefault(userId, Collections.emptySet());
+    }
+
+    private long countCommonFilms(Set<Long> first, Set<Long> second) {
+        return first.stream()
+                .filter(second::contains)
+                .count();
+    }
+
+    private void removeUserLike(long userId, long filmId) {
+        Set<Long> likedFilms = userLikes.get(userId);
+        if (likedFilms != null) {
+            likedFilms.remove(filmId);
+            if (likedFilms.isEmpty()) {
+                userLikes.remove(userId);
+            }
+        }
     }
 }

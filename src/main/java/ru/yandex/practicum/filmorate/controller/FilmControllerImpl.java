@@ -11,7 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.Collection;
@@ -29,26 +30,26 @@ public class FilmControllerImpl implements FilmController {
 
     @Override
     @GetMapping
-    public Collection<Film> getAll() {
-        return filmService.getAll();
+    public Collection<FilmDto> getAll() {
+        return FilmMapper.toDto(filmService.getAll());
     }
 
     @Override
     @GetMapping("/{id}")
-    public Film getById(@PathVariable long id) {
-        return filmService.getById(id);
+    public FilmDto getById(@PathVariable long id) {
+        return FilmMapper.toDto(filmService.getById(id));
     }
 
     @Override
     @PostMapping
-    public Film create(@Valid @RequestBody Film film) {
-        return filmService.create(film);
+    public FilmDto create(@Valid @RequestBody FilmDto film) {
+        return FilmMapper.toDto(filmService.create(FilmMapper.toModel(film)));
     }
 
     @Override
     @PutMapping
-    public Film update(@Valid @RequestBody Film film) {
-        return filmService.update(film);
+    public FilmDto update(@Valid @RequestBody FilmDto film) {
+        return FilmMapper.toDto(filmService.update(FilmMapper.toModel(film)));
     }
 
     @Override
@@ -71,30 +72,30 @@ public class FilmControllerImpl implements FilmController {
 
     @Override
     @GetMapping("/popular")
-    public List<Film> getPopular(@RequestParam(defaultValue = "10") int count,
-                                 @RequestParam(required = false) Integer genreId,
-                                 @RequestParam(required = false) Integer year
+    public List<FilmDto> getPopular(@RequestParam(defaultValue = "10") int count,
+                                    @RequestParam(required = false) Integer genreId,
+                                    @RequestParam(required = false) Integer year
     ) {
-        return filmService.getPopular(count, genreId, year);
+        return FilmMapper.toDto(filmService.getPopular(count, genreId, year));
     }
 
     @Override
     @GetMapping("/director/{directorId}")
-    public List<Film> getByDirector(@PathVariable long directorId,
-                                    @RequestParam(defaultValue = "likes") String sortBy) {
-        return filmService.getByDirector(directorId, sortBy);
+    public List<FilmDto> getByDirector(@PathVariable long directorId,
+                                       @RequestParam(defaultValue = "likes") String sortBy) {
+        return FilmMapper.toDto(filmService.getByDirector(directorId, sortBy));
     }
 
     @Override
     @GetMapping("/search")
-    public List<Film> search(@RequestParam String query, @RequestParam String by) {
-        return filmService.search(query, by);
+    public List<FilmDto> search(@RequestParam String query, @RequestParam String by) {
+        return FilmMapper.toDto(filmService.search(query, by));
     }
 
     @Override
     @GetMapping("/common")
-    public List<Film> getCommonFilms(@RequestParam long userId, @RequestParam long friendId) {
+    public List<FilmDto> getCommonFilms(@RequestParam long userId, @RequestParam long friendId) {
         log.info("Получены общие фильмы для пользователей {} и {}", userId, friendId);
-        return filmService.getCommonFilms(userId, friendId);
+        return FilmMapper.toDto(filmService.getCommonFilms(userId, friendId));
     }
 }
