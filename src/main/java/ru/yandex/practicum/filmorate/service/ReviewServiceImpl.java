@@ -71,6 +71,7 @@ public class ReviewServiceImpl implements ReviewService {
         Review existing = getReviewOrThrow(id);
         reviewStorage.delete(id);
         eventStorage.add(existing.getUserId(), EventType.REVIEW, EventOperation.REMOVE, id);
+
         log.info("Удален отзыв с id={}", id);
     }
 
