@@ -260,7 +260,7 @@ class FilmControllerTest {
     }
 
     @Test
-    void shouldNotCreateEventsForDuplicateLikeOperations() throws Exception {
+    void shouldCreateEventsForEveryLikeOperation() throws Exception {
         long userId = createUser("like-events@test.com", "like-events", "Like Events");
         long filmId = createFilm();
 
@@ -275,15 +275,17 @@ class FilmControllerTest {
 
         mockMvc.perform(get("/users/{userId}/feed", userId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$.length()").value(4))
                 .andExpect(jsonPath("$[0].eventType").value("LIKE"))
                 .andExpect(jsonPath("$[0].operation").value("ADD"))
                 .andExpect(jsonPath("$[0].entityId").value(filmId))
                 .andExpect(jsonPath("$[0].userId").value(userId))
                 .andExpect(jsonPath("$[1].eventType").value("LIKE"))
-                .andExpect(jsonPath("$[1].operation").value("REMOVE"))
+                .andExpect(jsonPath("$[1].operation").value("ADD"))
                 .andExpect(jsonPath("$[1].entityId").value(filmId))
-                .andExpect(jsonPath("$[1].userId").value(userId));
+                .andExpect(jsonPath("$[1].userId").value(userId))
+                .andExpect(jsonPath("$[2].operation").value("REMOVE"))
+                .andExpect(jsonPath("$[3].operation").value("REMOVE"));
     }
 
     @Test
