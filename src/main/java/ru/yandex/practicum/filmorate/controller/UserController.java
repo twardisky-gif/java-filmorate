@@ -1,8 +1,8 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import ru.yandex.practicum.filmorate.model.Event;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.dto.EventDto;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.dto.UserDto;
 
 import java.util.Collection;
 import java.util.List;
@@ -17,7 +17,7 @@ public interface UserController {
      *
      * @return коллекция пользователей
      */
-    Collection<User> getAll();
+    Collection<UserDto> getAll();
 
     /**
      * Возвращает пользователя по идентификатору.
@@ -26,7 +26,7 @@ public interface UserController {
      * @return найденный пользователь
      * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если пользователь не найден
      */
-    User getById(long id);
+    UserDto getById(long id);
 
     /**
      * Создаёт нового пользователя.
@@ -34,7 +34,7 @@ public interface UserController {
      * @param user данные пользователя
      * @return сохранённый пользователь с присвоенным идентификатором
      */
-    User create(User user);
+    UserDto create(UserDto user);
 
     /**
      * Обновляет существующего пользователя.
@@ -43,7 +43,7 @@ public interface UserController {
      * @return обновлённый пользователь
      * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если пользователь не найден
      */
-    User update(User user);
+    UserDto update(UserDto user);
 
     /**
      * Удаляет пользователя.
@@ -74,7 +74,7 @@ public interface UserController {
      * @param id идентификатор пользователя
      * @return список друзей
      */
-    List<User> getFriends(long id);
+    List<UserDto> getFriends(long id);
 
     /**
      * Возвращает общих друзей двух пользователей.
@@ -83,7 +83,7 @@ public interface UserController {
      * @param otherId идентификатор второго пользователя
      * @return список общих друзей
      */
-    List<User> getCommonFriends(long id, long otherId);
+    List<UserDto> getCommonFriends(long id, long otherId);
 
     /**
      * Возвращает рекомендации фильмов для пользователя.
@@ -93,7 +93,7 @@ public interface UserController {
      * @return список рекомендованных фильмов
      * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если пользователь не найден
      */
-    List<Film> getRecommendations(long id, int count);
+    List<FilmDto> getRecommendations(long id, int count);
 
     /**
      * Возвращает ленту событий пользователя.
@@ -102,5 +102,5 @@ public interface UserController {
      * @return список событий, отсортированный по времени
      * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если пользователь не найден
      */
-    List<Event> getFeed(long id);
+    List<EventDto> getFeed(long id);
 }

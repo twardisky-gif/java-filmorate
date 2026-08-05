@@ -15,6 +15,10 @@ public final class DirectorMapper {
         return new DirectorDto(director.getId(), director.getName());
     }
 
+    public static Director toModel(DirectorDto director) {
+        return new Director(director.id(), director.name());
+    }
+
     public static List<DirectorDto> toDto(Collection<Director> directors) {
         return directors.stream()
                 .map(DirectorMapper::toDto)

@@ -14,6 +14,10 @@ public final class MpaMapper {
         return new MpaDto(mpa.getId(), mpa.getName());
     }
 
+    public static Mpa toModel(MpaDto mpa) {
+        return new Mpa(mpa.id(), mpa.name());
+    }
+
     public static List<MpaDto> toDto(List<Mpa> mpaList) {
         return mpaList.stream()
                 .map(MpaMapper::toDto)

@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import ru.yandex.practicum.filmorate.model.Review;
+import ru.yandex.practicum.filmorate.dto.ReviewDto;
+import ru.yandex.practicum.filmorate.mapper.ReviewMapper;
 import ru.yandex.practicum.filmorate.service.ReviewService;
 
 import java.util.List;
@@ -26,14 +27,14 @@ public class ReviewControllerImpl implements ReviewController {
 
     @Override
     @PostMapping
-    public Review create(@Valid @RequestBody Review review) {
-        return reviewService.create(review);
+    public ReviewDto create(@Valid @RequestBody ReviewDto review) {
+        return ReviewMapper.toDto(reviewService.create(ReviewMapper.toModel(review)));
     }
 
     @Override
     @PutMapping
-    public Review update(@Valid @RequestBody Review review) {
-        return reviewService.update(review);
+    public ReviewDto update(@Valid @RequestBody ReviewDto review) {
+        return ReviewMapper.toDto(reviewService.update(ReviewMapper.toModel(review)));
     }
 
     @Override
@@ -44,15 +45,15 @@ public class ReviewControllerImpl implements ReviewController {
 
     @Override
     @GetMapping("/{id}")
-    public Review getById(@PathVariable long id) {
-        return reviewService.getById(id);
+    public ReviewDto getById(@PathVariable long id) {
+        return ReviewMapper.toDto(reviewService.getById(id));
     }
 
     @Override
     @GetMapping
-    public List<Review> getReviews(@RequestParam(required = false) Long filmId,
-                                   @RequestParam(defaultValue = "10") int count) {
-        return reviewService.getReviews(filmId, count);
+    public List<ReviewDto> getReviews(@RequestParam(required = false) Long filmId,
+                                      @RequestParam(defaultValue = "10") int count) {
+        return ReviewMapper.toDto(reviewService.getReviews(filmId, count));
     }
 
     @Override

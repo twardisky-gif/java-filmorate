@@ -1,6 +1,6 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import ru.yandex.practicum.filmorate.model.Review;
+import ru.yandex.practicum.filmorate.dto.ReviewDto;
 
 import java.util.List;
 
@@ -17,7 +17,7 @@ public interface ReviewController {
      * @throws ru.yandex.practicum.filmorate.exception.ValidationException если отзыв пользователя на фильм уже существует
      * @throws ru.yandex.practicum.filmorate.exception.NotFoundException   если пользователь или фильм не найден
      */
-    Review create(Review review);
+    ReviewDto create(ReviewDto review);
 
     /**
      * Обновляет содержание и оценку существующего отзыва.
@@ -26,7 +26,7 @@ public interface ReviewController {
      * @return обновлённый отзыв
      * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если отзыв не найден
      */
-    Review update(Review review);
+    ReviewDto update(ReviewDto review);
 
     /**
      * Удаляет отзыв по идентификатору.
@@ -43,7 +43,7 @@ public interface ReviewController {
      * @return найденный отзыв
      * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если отзыв не найден
      */
-    Review getById(long id);
+    ReviewDto getById(long id);
 
     /**
      * Возвращает список отзывов, отсортированных по полезности.
@@ -53,7 +53,7 @@ public interface ReviewController {
      * @return список отзывов
      * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если указанный фильм не найден
      */
-    List<Review> getReviews(Long filmId, int count);
+    List<ReviewDto> getReviews(Long filmId, int count);
 
     /**
      * Отмечает отзыв как полезный от имени пользователя.
