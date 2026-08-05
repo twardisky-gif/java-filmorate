@@ -69,20 +69,18 @@ public class UserServiceImpl implements UserService {
     public void addFriend(long userId, long friendId) {
         getUserOrThrow(userId);
         getUserOrThrow(friendId);
-        if (friendshipStorage.add(userId, friendId)) {
-            eventStorage.add(userId, EventType.FRIEND, EventOperation.ADD, friendId);
-            log.info("Пользователь {} добавил в друзья пользователя {}", userId, friendId);
-        }
+        friendshipStorage.add(userId, friendId);
+        eventStorage.add(userId, EventType.FRIEND, EventOperation.ADD, friendId);
+        log.info("Пользователь {} добавил в друзья пользователя {}", userId, friendId);
     }
 
     @Override
     public void removeFriend(long userId, long friendId) {
         getUserOrThrow(userId);
         getUserOrThrow(friendId);
-        if (friendshipStorage.remove(userId, friendId)) {
-            eventStorage.add(userId, EventType.FRIEND, EventOperation.REMOVE, friendId);
-            log.info("Пользователь {} удалил из друзей пользователя {}", userId, friendId);
-        }
+        friendshipStorage.remove(userId, friendId);
+        eventStorage.add(userId, EventType.FRIEND, EventOperation.REMOVE, friendId);
+        log.info("Пользователь {} удалил из друзей пользователя {}", userId, friendId);
     }
 
     @Override

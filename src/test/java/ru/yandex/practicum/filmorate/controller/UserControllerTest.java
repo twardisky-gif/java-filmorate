@@ -290,7 +290,7 @@ class UserControllerTest {
     }
 
     @Test
-    void shouldNotCreateEventsForDuplicateFriendOperations() throws Exception {
+    void shouldCreateEventsForEveryFriendOperation() throws Exception {
         long userId = createUser();
         long friendId = createUser();
 
@@ -305,15 +305,17 @@ class UserControllerTest {
 
         mockMvc.perform(get("/users/" + userId + "/feed"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$.length()").value(4))
                 .andExpect(jsonPath("$[0].eventType").value("FRIEND"))
                 .andExpect(jsonPath("$[0].operation").value("ADD"))
                 .andExpect(jsonPath("$[0].entityId").value(friendId))
                 .andExpect(jsonPath("$[0].userId").value(userId))
                 .andExpect(jsonPath("$[1].eventType").value("FRIEND"))
-                .andExpect(jsonPath("$[1].operation").value("REMOVE"))
+                .andExpect(jsonPath("$[1].operation").value("ADD"))
                 .andExpect(jsonPath("$[1].entityId").value(friendId))
-                .andExpect(jsonPath("$[1].userId").value(userId));
+                .andExpect(jsonPath("$[1].userId").value(userId))
+                .andExpect(jsonPath("$[2].operation").value("REMOVE"))
+                .andExpect(jsonPath("$[3].operation").value("REMOVE"));
     }
 
     @Test
