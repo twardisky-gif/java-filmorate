@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import ru.yandex.practicum.filmorate.model.Event;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.Collection;
@@ -83,6 +84,16 @@ public interface UserController {
      * @return список общих друзей
      */
     List<User> getCommonFriends(long id, long otherId);
+
+    /**
+     * Возвращает рекомендации фильмов для пользователя.
+     *
+     * @param id    идентификатор пользователя
+     * @param count максимальное количество рекомендаций
+     * @return список рекомендованных фильмов
+     * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если пользователь не найден
+     */
+    List<Film> getRecommendations(long id, int count);
 
     /**
      * Возвращает ленту событий пользователя.

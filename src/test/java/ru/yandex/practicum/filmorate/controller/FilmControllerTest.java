@@ -260,6 +260,33 @@ class FilmControllerTest {
     }
 
     @Test
+    void shouldNotCreateEventsForDuplicateLikeOperations() throws Exception {
+        long userId = createUser("like-events@test.com", "like-events", "Like Events");
+        long filmId = createFilm();
+
+        mockMvc.perform(put("/films/{filmId}/like/{userId}", filmId, userId))
+                .andExpect(status().isOk());
+        mockMvc.perform(put("/films/{filmId}/like/{userId}", filmId, userId))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/films/{filmId}/like/{userId}", filmId, userId))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/films/{filmId}/like/{userId}", filmId, userId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/users/{userId}/feed", userId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].eventType").value("LIKE"))
+                .andExpect(jsonPath("$[0].operation").value("ADD"))
+                .andExpect(jsonPath("$[0].entityId").value(filmId))
+                .andExpect(jsonPath("$[0].userId").value(userId))
+                .andExpect(jsonPath("$[1].eventType").value("LIKE"))
+                .andExpect(jsonPath("$[1].operation").value("REMOVE"))
+                .andExpect(jsonPath("$[1].entityId").value(filmId))
+                .andExpect(jsonPath("$[1].userId").value(userId));
+    }
+
+    @Test
     @DisplayName("GET /users/{id}/recommendations должен возвращать рекомендации")
     void shouldReturnRecommendations() throws Exception {
         long user1Id = createUser("user1@test.com", "user1", "User One");

@@ -103,18 +103,20 @@ public class FilmServiceImpl implements FilmService {
     public void addLike(long filmId, long userId) {
         getFilmOrThrow(filmId);
         userService.getById(userId);
-        likeStorage.add(filmId, userId);
-        eventStorage.add(userId, EventType.LIKE, EventOperation.ADD, filmId);
-        log.info("Пользователь {} поставил лайк фильму {}", userId, filmId);
+        if (likeStorage.add(filmId, userId)) {
+            eventStorage.add(userId, EventType.LIKE, EventOperation.ADD, filmId);
+            log.info("Пользователь {} поставил лайк фильму {}", userId, filmId);
+        }
     }
 
     @Override
     public void removeLike(long filmId, long userId) {
         getFilmOrThrow(filmId);
         userService.getById(userId);
-        likeStorage.remove(filmId, userId);
-        eventStorage.add(userId, EventType.LIKE, EventOperation.REMOVE, filmId);
-        log.info("Пользователь {} удалил лайк фильму {}", userId, filmId);
+        if (likeStorage.remove(filmId, userId)) {
+            eventStorage.add(userId, EventType.LIKE, EventOperation.REMOVE, filmId);
+            log.info("Пользователь {} удалил лайк фильму {}", userId, filmId);
+        }
     }
 
     @Override
@@ -223,4 +225,3 @@ public class FilmServiceImpl implements FilmService {
         return commonFilms;
     }
 }
-

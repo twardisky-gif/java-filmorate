@@ -176,31 +176,25 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
     @Override
     public List<Film> getPopular(int count, Integer genreId, Integer year) {
-        // ������ ������������ ������
         StringBuilder queryBuilder = new StringBuilder(FIND_POPULAR_QUERY);
         List<Object> params = new ArrayList<>();
 
-        // ������ �� ����
         if (year != null) {
             queryBuilder.append("AND YEAR(f.release_date) = ? ");
             params.add(year);
         }
 
-        // ������ �� �����
         if (genreId != null) {
             queryBuilder.append("AND fg.genre_id = ? ");
             params.add(genreId);
         }
 
-        // ����������� � ����������
         queryBuilder.append("GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name ")
                 .append("ORDER BY likes_count DESC, f.film_id ");
 
-        // �����
         queryBuilder.append("LIMIT ?");
         params.add(count);
 
-        // ��������� ������
         List<Film> films = findMany(queryBuilder.toString(), params.toArray());
         loadGenres(films);
         loadDirectors(films);

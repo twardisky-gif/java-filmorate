@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import org.springframework.web.bind.annotation.RequestParam;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.Collection;
@@ -77,9 +76,34 @@ public interface FilmController {
      */
     List<Film> getPopular(int count, Integer genreId, Integer year);
 
+    /**
+     * Возвращает фильмы режиссёра с указанной сортировкой.
+     *
+     * @param directorId идентификатор режиссёра
+     * @param sortBy     тип сортировки: по году или количеству лайков
+     * @return список фильмов режиссёра
+     * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если режиссёр не найден
+     * @throws ru.yandex.practicum.filmorate.exception.ValidationException если тип сортировки не поддерживается
+     */
     List<Film> getByDirector(long directorId, String sortBy);
 
+    /**
+     * Ищет фильмы по названию, режиссёру или обоим полям.
+     *
+     * @param query поисковая строка
+     * @param by    поля поиска: title, director или оба значения
+     * @return список найденных фильмов по убыванию популярности
+     * @throws ru.yandex.practicum.filmorate.exception.ValidationException если указано неподдерживаемое поле поиска
+     */
     List<Film> search(String query, String by);
 
-    List<Film> getCommonFilms(@RequestParam long userId, @RequestParam long friendId);
+    /**
+     * Возвращает общие фильмы двух пользователей по убыванию популярности.
+     *
+     * @param userId   идентификатор первого пользователя
+     * @param friendId идентификатор второго пользователя
+     * @return список общих фильмов
+     * @throws ru.yandex.practicum.filmorate.exception.NotFoundException если один из пользователей не найден
+     */
+    List<Film> getCommonFilms(long userId, long friendId);
 }
